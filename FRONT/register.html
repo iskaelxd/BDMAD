@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <link rel="stylesheet" href="register.css">
+    <title>Registro - PostNet</title>
+</head>
+<body>
+
+    <div class="container">
+        <h1>PostNet</h1>
+        <p>Registro</p>
+        <form id="registroForm">
+            <input type="text" id="nombre" class="input-field" placeholder="Nombre" required>
+            <span class="error" id="errorNombre"></span>
+
+            <input type="text" id="apellido" class="input-field" placeholder="Apellido" required>
+            <span class="error" id="errorApellido"></span>
+
+            <input type="email" id="email" class="input-field" placeholder="Correo electrónico" required>
+            <span class="error" id="errorEmail"></span>
+
+            <input type="text" id="username" class="input-field" placeholder="Nombre de usuario" required>
+            <span class="error" id="errorUsername"></span>
+
+            <input type="date" id="fechaNacimiento" class="input-field" required>
+            <span class="error" id="errorFechaNacimiento"></span>
+
+            <input type="password" id="password" class="input-field" placeholder="Contraseña" required>
+            <span class="error" id="errorPassword"></span>
+
+            <input type="password" id="confirmPassword" class="input-field" placeholder="Confirmar contraseña" required>
+            <span class="error" id="errorConfirmPassword"></span>
+
+            <button type="submit" id="btnRegistrar" class="btn">Registrar</button>
+
+        </form>
+    </div>
+    <script>
+        function mostrarError(id, mensaje) {
+            $('#' + id).text(mensaje).show();
+        }
+    
+        function limpiarErrores() {
+            $('.error').text('');
+        }
+    
+        function calcularEdad(fechaNacimiento) {
+            const hoy = new Date();
+            const nacimiento = new Date(fechaNacimiento);
+            let edad = hoy.getFullYear() - nacimiento.getFullYear();
+            const m = hoy.getMonth() - nacimiento.getMonth();
+            if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+                edad--;
+            }
+            return edad;
+        }
+    
+        $(document).ready(function () {
+            $('#registroForm').on('submit', function (e) {
+                e.preventDefault(); // Evita que el formulario recargue la página
+                limpiarErrores();
+                
+                // Obtener valores
+                const nombre = $('#nombre').val().trim();
+                const apellido = $('#apellido').val().trim();
+                const email = $('#email').val().trim();
+                const username = $('#username').val().trim();
+                const fechaNacimiento = $('#fechaNacimiento').val();
+                const password = $('#password').val().trim();
+                const confirmPassword = $('#confirmPassword').val().trim();
+                
+                let valido = true;
+    
+                // Validaciones
+                if (nombre === '') {
+                    mostrarError('errorNombre', 'El nombre es obligatorio');
+                    valido = false;
+                }
+    
+                if (apellido === '') {
+                    mostrarError('errorApellido', 'El apellido es obligatorio');
+                    valido = false;
+                }
+    
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    mostrarError('errorEmail', 'Correo electrónico inválido');
+                    valido = false;
+                }
+    
+                const usernameRegex = /^[a-zA-Z0-9_]{4,}$/;
+                if (!usernameRegex.test(username)) {
+                    mostrarError('errorUsername', 'Usuario inválido (mínimo 4 caracteres, sin espacios)');
+                    valido = false;
+                }
+    
+                if (!fechaNacimiento) {
+                    mostrarError('errorFechaNacimiento', 'Debes ingresar tu fecha de nacimiento');
+                    valido = false;
+                } else if (calcularEdad(fechaNacimiento) < 18) {
+                    mostrarError('errorFechaNacimiento', 'Debes ser mayor de edad (18+)');
+                    valido = false;
+                }
+    
+                if (password.length < 8) {
+                    mostrarError('errorPassword', 'La contraseña debe tener al menos 8 caracteres');
+                    valido = false;
+                }
+    
+                if (password !== confirmPassword) {
+                    mostrarError('errorConfirmPassword', 'Las contraseñas no coinciden');
+                    valido = false;
+                }
+    
+                if (!valido) return;
+    
+                // Si todo es válido, enviar AJAX
+                $.ajax({
+                    url: '../BACKEND/Controlador/Usuario.php',
+                    type: 'POST',
+                    data: {
+                        nombre,
+                        apellido,
+                        email,
+                        username,
+                        fechaNacimiento,
+                        password
+                    },
+                    success: function (response) {
+                        console.log(response);
+                        let res = JSON.parse(response);
+                        if (res.status === 'success') {
+                            alert("✅ Registro exitoso");
+                            $('#registroForm')[0].reset();
+                        } else {
+                            alert("❌ Error: " + res.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(error);
+                        alert("❌ Error al conectar con el servidor.");
+                    }
+                });
+            });
+        });
+    </script>
+    
+</body>
+</html>

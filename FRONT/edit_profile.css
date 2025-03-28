@@ -1,0 +1,129 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #121212;
+    display: flex;
+    justify-content: center;
+}
+
+/* Barra Lateral */
+.sidebar {
+    width: 80px;
+    height: 100vh;
+    background-color: #1e1e1e;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+
+.sidebar a {
+    text-decoration: none;
+    color: #bbbbbb;
+    font-size: 20px;
+    margin: 15px 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    transition: background 0.3s;
+}
+
+.sidebar a i {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.sidebar a:hover {
+    background-color: #333;
+}
+
+/* Contenedor Principal */
+.main-container {
+    flex-grow: 1;
+    margin-left: 100px;
+    padding: 20px;
+    color: white;
+    max-width: 600px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Encabezado con Título */
+.header {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Formulario de edición */
+.edit-profile-container {
+    background-color: #1e1e1e;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.edit-profile-container label {
+    color: #bbbbbb;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.edit-profile-container input,
+.edit-profile-container select,
+.edit-profile-container textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #292929;
+    color: white;
+}
+
+.edit-profile-container input[type="file"] {
+    background-color: transparent;
+    border: none;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.save-btn {
+    background-color: #6200ea;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    width: 100%;
+}
+
+.save-btn:hover {
+    background-color: #4300b6;
+}
+

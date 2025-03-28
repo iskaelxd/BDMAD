@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostNet - Me Gusta</title>
+    
+    <!-- Agregar Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="likes.css">
+    
+ 
+</head>
+<body>
+
+    <!-- Barra Lateral -->
+    <div class="sidebar">
+        <a href="main.html"><i class="fas fa-home"></i><br></a>
+        <a href="likes.html"><i class="fas fa-heart"></i><br></a>
+        <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
+        <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="main-container">
+        
+        <!-- Encabezado con Búsqueda -->
+        <div class="header">
+            <h1>PostNet</h1>
+            <input type="text" class="search-bar" placeholder="Buscar">
+            <button class="search-btn">Buscar</button>
+
+               <!-- Usuario y Cerrar Sesión -->
+            <div class="usuario-header" id="usuarioHeader">
+                <span id="nombreUsuario">Usuario</span>
+                <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
+            </div>
+        </div>
+
+        <!-- Publicaciones que me gustaron -->
+        <div class="post-container">
+            <div class="post-header">
+                <div class="user-avatar">A</div>
+                <span><strong>Usuario A</strong></span>
+            </div>
+            <p class="post-text">Esta es una publicación que te gustó.</p>
+            <div class="post-image"></div>
+            <div class="likes"><i class="fas fa-heart"></i> 20 Me gusta</div>
+        </div>
+
+        <div class="post-container">
+            <div class="post-header">
+                <div class="user-avatar">B</div>
+                <span><strong>Usuario B</strong></span>
+            </div>
+            <p class="post-text">Otra publicación que marcaste con "Me gusta".</p>
+            <div class="post-image"></div>
+            <div class="likes"><i class="fas fa-heart"></i> 45 Me gusta</div>
+        </div>
+
+    </div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+    let usuario = JSON.parse(localStorage.getItem('usuario'));
+
+    if (!usuario) {
+        // Si no existe en localStorage, lo busco en sessionStorage
+        usuario = JSON.parse(sessionStorage.getItem('usuario'));
+    }
+
+    if (usuario) {
+        document.getElementById("nombreUsuario").textContent = usuario.nombre;
+    } else {
+        location.href = "login.html"; // Redirige si no está logueado en ninguna de las dos
+    }
+});
+
+function cerrarSesion() {
+    localStorage.removeItem('usuario');
+    sessionStorage.removeItem('usuario');
+    location.href = "login.html";
+}
+</script>
+</body>
+</html>

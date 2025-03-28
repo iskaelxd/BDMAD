@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="login.css">
+    <title>Iniciar Sesión - PostNet</title>
+</head>
+<body>
+
+    <div class="container">
+        <h1>PostNet</h1>
+        <p>Inicio</p>
+        <form id="loginForm">
+            <input type="email" id="email" class="input-field" placeholder="Correo electrónico" required>
+            <span class="error" id="errorEmail"></span>
+
+            <input type="password" id="password" class="input-field" placeholder="Contraseña" required>
+            <span class="error" id="errorPassword"></span>
+
+            <div class="remember">
+                <input type="checkbox" id="recordarSesion">
+                <label for="recordarSesion">Recordar sesión</label>
+            </div>
+
+            <button type="submit" id="btnEntrar" class="btn" disabled>Entrar</button>
+        </form>
+
+        <p class="register">¿No tienes cuenta? <a href="register.html">Regístrate</a></p>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("loginForm");
+            const email = document.getElementById("email");
+            const password = document.getElementById("password");
+            const btnEntrar = document.getElementById("btnEntrar");
+    
+            const errores = {
+                email: document.getElementById("errorEmail"),
+                password: document.getElementById("errorPassword")
+            };
+    
+            function validarFormulario() {
+                let valido = true;
+    
+                const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!regexEmail.test(email.value)) {
+                    errores.email.textContent = "Correo inválido.";
+                    valido = false;
+                } else {
+                    errores.email.textContent = "";
+                }
+    
+                if (password.value.length < 6) {
+                    errores.password.textContent = "La contraseña debe tener al menos 6 caracteres.";
+                    valido = false;
+                } else {
+                    errores.password.textContent = "";
+                }
+    
+                btnEntrar.disabled = !valido;
+            }
+    
+            form.addEventListener("input", validarFormulario);
+    
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+    
+                fetch('../BACKEND/Controlador/Login.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `email=${encodeURIComponent(email.value)}&password=${encodeURIComponent(password.value)}`
+                })
+                .then(response => response.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        alert("✅ Bienvenido, " + res.usuario.nombre + "!");
+                        sessionStorage.setItem('usuario', JSON.stringify(res.usuario));
+
+                            // Y SI está marcado “Recordar sesión”, también guardas en localStorage (para persistencia)
+                            if (document.getElementById("recordarSesion").checked) {
+                                localStorage.setItem('usuario', JSON.stringify(res.usuario));
+                            }
+                     // Redirigir a otra página si lo deseas
+                           location.href = 'main.html';
+                    } else {
+                        alert("❌ " + res.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("❌ Error en el servidor");
+                });
+            });
+
+        });
+    </script>
+    
+
+</body>
+</html>

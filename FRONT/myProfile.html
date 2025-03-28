@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostNet - Mi Perfil</title>
+    <link rel="stylesheet" href="myProfile.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+
+    <!-- Barra Lateral -->
+    <div class="sidebar">
+        <a href="main.html"><i class="fas fa-home"></i><br></a>
+        <a href="likes.html"><i class="fas fa-heart"></i><br></a>
+        <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
+        <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
+        
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="main-container">
+        
+        <!-- Encabezado con Búsqueda -->
+        <div class="header">
+            <h1>PostNet</h1>
+            <input type="text" class="search-bar" placeholder="Buscar">
+            <button class="search-btn">Buscar</button>
+            <!-- Usuario y Cerrar Sesión -->
+            <div class="usuario-header" id="usuarioHeader">
+                <span id="nombreUsuario">Usuario</span>
+                <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
+            </div>
+        </div>
+
+        <!-- Perfil -->
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-info">
+                    <div class="profile-avatar">T</div>
+                    <div>
+                        <strong>myProfile</strong>
+                        <p style="color: #bbbbbb; font-size: 12px;">50 Followers</p>
+                    </div>
+                </div>
+                <button class="edit-btn" onclick="editarPerfil()">EDITAR</button>
+            </div>
+            <div class="profile-tabs">
+                <span>Publicaciones</span>
+                <span>Respuestas</span>
+                <span>Repost</span>
+            </div>
+        </div>
+
+        <!-- Publicaciones -->
+        <div class="post-container">
+            <div class="post-header">
+                <div class="user-avatar">T</div>
+                <span><strong>Usuario T</strong></span>
+            </div>
+            <p class="post-text">Mi primera publicación en PostNet.</p>
+            <div class="post-image"></div>
+            <div class="likes"><i class="fas fa-heart"></i> 15 Me gusta</div>
+        </div>
+
+    </div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+    let usuario = JSON.parse(localStorage.getItem('usuario'));
+
+    if (!usuario) {
+        // Si no existe en localStorage, lo busco en sessionStorage
+        usuario = JSON.parse(sessionStorage.getItem('usuario'));
+    }
+
+    if (usuario) {
+        document.getElementById("nombreUsuario").textContent = usuario.nombre;
+    } else {
+        location.href = "login.html"; // Redirige si no está logueado en ninguna de las dos
+    }
+});
+
+function cerrarSesion() {
+    localStorage.removeItem('usuario');
+    sessionStorage.removeItem('usuario');
+    location.href = "login.html";
+}
+
+function editarPerfil() {
+    // Redirigir a la página de edición de perfil
+    location.href = "edit_profile.html";
+}
+</script>
+</body>
+</html>
