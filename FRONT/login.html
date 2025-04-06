@@ -75,6 +75,8 @@
                 .then(response => response.json())
                 .then(res => {
                     if (res.status === 'success') {
+                        // Si la respuesta es exitosa, guardas el usuario en sessionStorage
+                        // y muestras un mensaje de bienvenida
                         alert("✅ Bienvenido, " + res.usuario.nombre + "!");
                         sessionStorage.setItem('usuario', JSON.stringify(res.usuario));
 

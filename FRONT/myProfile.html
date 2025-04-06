@@ -6,6 +6,7 @@
     <title>PostNet - Mi Perfil</title>
     <link rel="stylesheet" href="myProfile.css">
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
@@ -34,14 +35,17 @@
             </div>
         </div>
 
-        <!-- Perfil -->
+                  <!-- Perfil -->
         <div class="profile-container">
             <div class="profile-header">
                 <div class="profile-info">
-                    <div class="profile-avatar">T</div>
+                    <!-- Avatar circular -->
+                    <div class="profile-avatar" id="profileAvatar">T</div>
                     <div>
-                        <strong>myProfile</strong>
-                        <p style="color: #bbbbbb; font-size: 12px;">50 Followers</p>
+                        <strong id="profileName">myProfile</strong>
+                        <p id="followersCount" style="color: #bbbbbb; font-size: 12px;">50 Followers</p>
+                        <!-- Elemento para mostrar la biografía -->
+                        <p id="profileBio"></p>
                     </div>
                 </div>
                 <button class="edit-btn" onclick="editarPerfil()">EDITAR</button>
@@ -76,10 +80,79 @@
 
     if (usuario) {
         document.getElementById("nombreUsuario").textContent = usuario.nombre;
+        console.log(usuario.email); // Muestra el nombre del usuario en la consola
+        obtenerDatosUsuario(usuario.email); // Llama a la función para obtener datos del usuario
     } else {
         location.href = "login.html"; // Redirige si no está logueado en ninguna de las dos
     }
 });
+
+
+function obtenerDatosUsuario(email) {
+    $.ajax({
+        url: '../BACKEND/Controlador/Usuario_select.php',
+        type: 'POST',
+        data: { email: email },
+        success: function (response) {
+            console.log("Respuesta del servidor:", response);
+            
+            // 1. Convertir la respuesta en objeto JS
+            let res = JSON.parse(response);
+
+            // 2. Verificar que status sea 'success'
+            if (res.status === 'success' && res.data.length > 0) {
+                let userData = res.data[0]; 
+                
+                // 3. Insertar datos en el HTML
+                
+                // Nombre en la esquina superior
+                document.getElementById("nombreUsuario").textContent = userData.nombre;
+                
+                // Muestra nombre + apellido en el perfil
+                document.getElementById("profileName").textContent = userData.nombre + " " + userData.apellido;
+
+                // Bio
+                document.getElementById("profileBio").textContent = userData.bio ? userData.bio : "";
+
+                // Si deseas usar la inicial del nombre cuando no hay avatar
+                if (userData.nombre && userData.nombre.length > 0) {
+                    document.getElementById("profileAvatar").textContent = userData.nombre.charAt(0).toUpperCase();
+                }
+
+                // Si userData.avatar no es null, mostramos la imagen
+                if (userData.avatar) {
+                    let avatarBase64 = "data:image/jpeg;base64," + userData.avatar;
+                    let avatarElem = document.getElementById("profileAvatar");
+                    
+                    // Limpiar texto (inicial) y poner la imagen
+                    avatarElem.innerHTML = "";
+                    let imgTag = document.createElement("img");
+                    imgTag.src = avatarBase64;
+                    imgTag.alt = "Avatar";
+                    // Ajustamos el tamaño según el contenedor
+                    imgTag.style.width = "100%";
+                    imgTag.style.height = "100%";
+                    // Para que sea circular
+                    imgTag.style.borderRadius = "50%";
+                    imgTag.style.objectFit = "cover";
+
+                    avatarElem.appendChild(imgTag);
+                }
+
+                // 4. Guardamos en localStorage la info actualizada (opcional)
+                localStorage.setItem('usuario', JSON.stringify(userData));
+
+            } else {
+                console.log("No se encontró usuario o status !== success");
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+            alert("❌ Error al conectar con el servidor.");
+        }
+    });
+}
+
 
 function cerrarSesion() {
     localStorage.removeItem('usuario');
@@ -91,6 +164,7 @@ function editarPerfil() {
     // Redirigir a la página de edición de perfil
     location.href = "edit_profile.html";
 }
+
 </script>
 </body>
 </html>

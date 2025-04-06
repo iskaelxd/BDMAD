@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Perfil - PostNet</title>
-    
-    <!-- Agregar Font Awesome para iconos -->
+    <!-- Estilos e íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="edit_profile.css">
-   
+    <!-- jQuery (antes de tu script) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
 
@@ -30,38 +30,39 @@
 
         <!-- Formulario de Edición de Perfil -->
         <div class="edit-profile-container">
-            <form>
+            <!-- Notar que agregamos un id="editProfileForm" para capturar el submit -->
+            <form id="editProfileForm">
                 <label for="avatar">Foto de Perfil</label>
-                <input type="file" id="avatar" accept="image/*">
+                <input type="file" id="avatar" name="avatar" accept="image/*">
 
                 <label for="nombre">Nombre</label>
-                <input type="text" id="nombre" placeholder="Tu nombre">
+                <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
 
                 <label for="apellido">Apellido</label>
-                <input type="text" id="apellido" placeholder="Tu apellido">
+                <input type="text" id="apellido" name="apellido" placeholder="Tu apellido">
 
                 <label for="username">Nombre de Usuario</label>
-                <input type="text" id="username" placeholder="@usuario">
+                <input type="text" id="username" name="username" placeholder="@usuario">
 
                 <label for="email">Correo Electrónico</label>
-                <input type="email" id="email" placeholder="ejemplo@email.com">
+                <input type="email" id="email" name="email" placeholder="ejemplo@email.com">
 
                 <label for="password">Nueva Contraseña</label>
-                <input type="password" id="password" placeholder="Nueva contraseña">
+                <input type="password" id="password" name="password" placeholder="Nueva contraseña">
 
                 <label for="fecha_nacimiento">Fecha de Nacimiento</label>
-                <input type="date" id="fecha_nacimiento">
+                <input type="date" id="fecha_nacimiento" name="fechaNacimiento">
 
                 <div class="checkbox-container">
-                    <input type="checkbox" id="cuenta_verificada">
+                    <input type="checkbox" id="cuenta_verificada" name="cuenta_verificada">
                     <label for="cuenta_verificada">Cuenta Verificada</label>
                 </div>
 
                 <label for="bio">Biografía</label>
-                <textarea id="bio" rows="3" placeholder="Escribe algo sobre ti..."></textarea>
+                <textarea id="bio" name="bio" rows="3" placeholder="Escribe algo sobre ti..."></textarea>
 
                 <label for="privacidad">Privacidad</label>
-                <select id="privacidad">
+                <select id="privacidad" name="privacidad">
                     <option value="publico">Público</option>
                     <option value="privado">Privado</option>
                 </select>
@@ -71,6 +72,102 @@
         </div>
 
     </div>
+
+    <script>
+    // 1. Al cargar la página, obtenemos el usuario y llenamos el formulario
+    document.addEventListener("DOMContentLoaded", () => {
+        let usuario = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(sessionStorage.getItem('usuario'));
+        
+        if(!usuario) {
+            // Si no hay info de usuario, redirigimos a login
+            location.href = "login.html";
+            return;
+        }
+
+        // Obtener datos actualizados del backend, por si hay cambios
+        obtenerDatosUsuario(usuario.email);
+        
+        // Manejar envío (submit) del formulario
+        document.getElementById("editProfileForm").addEventListener("submit", function(e){
+            e.preventDefault();
+           actualizarDatosUsuario();
+        });
+    });
+
+    // 2. Funcion para consultar la info del usuario (por email) y llenar el form
+    function obtenerDatosUsuario(email) {
+        $.ajax({
+            url: '../BACKEND/Controlador/Usuario_select.php',
+            type: 'POST',
+            data: { email: email },
+            success: function (response) {
+                console.log(response); // Para depuración
+                let res = JSON.parse(response);
+                if(res.status === 'success' && res.data.length > 0) {
+                    let userData = res.data[0];
+                    // Llenamos los campos del formulario
+                    $("#nombre").val(userData.nombre);
+                    $("#apellido").val(userData.apellido);
+                    $("#username").val(userData.username);
+                    $("#email").val(userData.email);
+                    // Contraseña la dejamos vacía por seguridad
+                    $("#password").val("");
+                    
+                    // Fecha de nacimiento
+                    if(userData.fecha_nacimiento) {
+                        // Ajustamos formato YYYY-MM-DD
+                        $("#fecha_nacimiento").val(userData.fecha_nacimiento.substr(0, 10));
+                    }
+                    
+                    // Para cuenta_verificada (1 = true, 0 = false)
+                    $("#cuenta_verificada").prop("checked", userData.cuenta_verificada == 1);
+
+                    // Bio y privacidad
+                    $("#bio").val(userData.bio || "");
+                    $("#privacidad").val(userData.privacidad || "publico");
+                } else {
+                    console.warn("No se encontró usuario en la BD o status !== success");
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error(error);
+                alert("❌ Error al conectar con el servidor.");
+            }
+        });
+    }
+
+    // 3. Función para mandar los datos editados al backend y actualizar
+    function actualizarDatosUsuario(){
+  let formData = new FormData(document.getElementById("editProfileForm"));
+
+  // Añade el id del usuario actual
+  let usuario = JSON.parse(localStorage.getItem('usuario'));
+  formData.append("id_usuario", usuario.id_usuario);
+
+  // Llamas a Usuario_update.php
+  $.ajax({
+      url: '../BACKEND/Controlador/Usuario_update.php',
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: function (response) {
+          let res = JSON.parse(response);
+          if(res.status === 'success') {
+              alert("Perfil actualizado correctamente");
+              // ...
+          } else {
+              alert("Error: " + res.message);
+          }
+      },
+      error: function (xhr, status, error) {
+          console.error(error);
+          alert("❌ Error al conectar con el servidor.");
+      }
+  });
+}
+
+    </script>
 
 </body>
 </html>
