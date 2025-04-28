@@ -44,7 +44,7 @@
             function validarFormulario() {
                 let valido = true;
     
-                const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{1,}$/;
                 if (!regexEmail.test(email.value)) {
                     errores.email.textContent = "Correo inválido.";
                     valido = false;

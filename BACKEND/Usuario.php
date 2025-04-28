@@ -33,7 +33,7 @@ class Usuarios {
     }
     
 
-    private function ejecutarSP($data, $transaCode) {
+    public function ejecutarSP($data, $transaCode) {
         $stmt = $this->pdo->prepare("CALL sp_crud_usuario(
             :id_usuario, :nombre, :apellido, :username, :email, :password, 
             :fecha_nacimiento, :avatar, :bio, :privacidad, :TransaCode)");

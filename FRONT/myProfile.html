@@ -15,9 +15,9 @@
     <div class="sidebar">
         <a href="main.html"><i class="fas fa-home"></i><br></a>
         <a href="likes.html"><i class="fas fa-heart"></i><br></a>
+        <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a> <!-- Nuevo botón para agregar publicación -->
         <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
         <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
-        
     </div>
 
     <!-- Contenido Principal -->
@@ -43,7 +43,7 @@
                     <div class="profile-avatar" id="profileAvatar">T</div>
                     <div>
                         <strong id="profileName">myProfile</strong>
-                        <p id="followersCount" style="color: #bbbbbb; font-size: 12px;">50 Followers</p>
+                      <p id="followersCount" style="color: #bbbbbb; font-size: 12px;">50 Followers</p>
                         <!-- Elemento para mostrar la biografía -->
                         <p id="profileBio"></p>
                     </div>
@@ -82,6 +82,7 @@
         document.getElementById("nombreUsuario").textContent = usuario.nombre;
         console.log(usuario.email); // Muestra el nombre del usuario en la consola
         obtenerDatosUsuario(usuario.email); // Llama a la función para obtener datos del usuario
+        //obtenerPublicaciones(usuario.id_usuario); // Llama a la función para obtener publicaciones del usuario
     } else {
         location.href = "login.html"; // Redirige si no está logueado en ninguna de las dos
     }
@@ -94,7 +95,7 @@ function obtenerDatosUsuario(email) {
         type: 'POST',
         data: { email: email },
         success: function (response) {
-            console.log("Respuesta del servidor:", response);
+    
             
             // 1. Convertir la respuesta en objeto JS
             let res = JSON.parse(response);
@@ -141,6 +142,8 @@ function obtenerDatosUsuario(email) {
 
                 // 4. Guardamos en localStorage la info actualizada (opcional)
                 localStorage.setItem('usuario', JSON.stringify(userData));
+                console.log(userData.id_usuario);
+                obtenerPublicaciones(userData.id_usuario);   // <<—— aquí llamamos a la función para obtener publicaciones
 
             } else {
                 console.log("No se encontró usuario o status !== success");
@@ -153,7 +156,352 @@ function obtenerDatosUsuario(email) {
     });
 }
 
+//PUBLICACIONES 
 
+function obtenerPublicaciones(idUsuario) {
+    $.ajax({
+        url: '../BACKEND/Controlador/Publicacion_select.php',
+        type: 'POST',
+        data: { id_usuario: idUsuario },
+        dataType: 'json',              // <<<<<<
+        success: function (res) {      // jQuery ya lo parseó
+            if (res.status === 'success') {
+                console.log(res.data); // Para depuración
+                renderizarPublicaciones(res.data);
+            } else {
+                console.error(res.message);
+            }
+        },
+        error: function (xhr, _s, _e) {
+            console.error('Respuesta cruda del servidor:', xhr.responseText);
+        }
+    });
+}
+
+/* ---------- helpers ---------- */
+function openModalElem(elem){
+  const o = document.createElement('div');
+  o.className='modal-overlay';
+  const c = document.createElement('div');
+  c.className='modal-content'; c.appendChild(elem);
+  const x = document.createElement('span');
+  x.className='modal-close'; x.innerHTML='&times;';
+  x.onclick = ()=>o.remove();
+  o.append(c,x); o.onclick=e=>{ if(e.target===o) o.remove(); };
+  document.body.appendChild(o);
+}
+
+function buildPlusOverlay(count){
+  const wrap = document.createElement('div');
+  wrap.style.position='relative';
+  wrap.style.cursor='pointer';
+  wrap.innerHTML=`<div style="
+        position:absolute;inset:0;background:rgba(0,0,0,.55);
+        display:flex;align-items:center;justify-content:center;
+        font-size:40px;color:#fff;border-radius:6px;">+${count}</div>`;
+  return wrap;
+}
+
+/* ---------- Modal-Carrusel (imagenes + videos) ---------- */
+function openCarouselModal(mediaArr, startIdx = 0){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  /* track con diapositivas */
+  const track = document.createElement('div');
+  track.className = 'carousel-track';
+  track.style.height = '80vh';                // alto máximo del modal
+
+  mediaArr.forEach(item=>{
+    if(item.type === 'img'){
+      const im = new Image();
+      im.src = `data:image/jpeg;base64,${item.src}`;
+      im.style.objectFit = 'contain';
+      track.appendChild(im);
+    }else{
+      const v = document.createElement('video');
+      v.src = item.src; v.controls = true; v.style.objectFit='contain';
+      track.appendChild(v);
+    }
+  });
+
+  /* contenedor + nav */
+  const modalCar = document.createElement('div');
+  modalCar.className = 'carousel';
+  modalCar.style.height = '80vh';
+  modalCar.appendChild(track);
+
+  let idx = startIdx;
+  move(0);                                     // posición inicial
+
+  const prev = navBtn('prev',-1);
+  const next = navBtn('next', 1);
+  modalCar.append(prev,next);
+
+  function navBtn(cls,dir){
+    const b=document.createElement('button');
+    b.className=`nav ${cls}`; b.innerHTML = cls==='prev'?'&#10094;':'&#10095;';
+    b.onclick=()=>move(dir);
+    return b;
+  }
+  function move(d){
+    idx = (idx + d + mediaArr.length) % mediaArr.length;
+    track.style.transform = `translateX(-${idx*100}%)`;
+  }
+
+  /* overlay + close */
+  const close = document.createElement('span');
+  close.className='modal-close'; close.innerHTML='&times;';
+  close.onclick = ()=>overlay.remove();
+
+  overlay.append(modalCar, close);
+  overlay.onclick = e=>{ if(e.target===overlay) overlay.remove(); };
+
+  document.body.appendChild(overlay);
+}
+
+
+/* ---------- función principal ---------- */
+function renderizarPublicaciones(filas){
+  /* 1. Agrupar por id_post */
+  const map = {};
+  filas.forEach(r => {
+    if (!map[r.id_post]) {
+        map[r.id_post] = {
+            id_post  : r.id_post,
+            fecha    : r.fecha_post,
+            contenido: r.contenido,
+            likes    : r.LIKES ?? 0,
+            nombre   : r.nombre ?? 'Yo',
+            imagenes : [],
+            videos   : []
+        };
+    }
+
+    if (r.imagen) map[r.id_post].imagenes.push(r.imagen);
+
+    /* 👉 añade solo si no existe todavía */
+    if (r.ruta_video && !map[r.id_post].videos.includes(r.ruta_video)) {
+        map[r.id_post].videos.push(r.ruta_video);
+    }
+});
+
+
+  /* 2. Ordenar más reciente primero */
+  const posts = Object.values(map).sort((a,b)=>b.id_post-a.id_post);
+
+  /* 3. Vaciar contenedor */
+  const cont = document.querySelector('.main-container');
+  cont.querySelectorAll('.post-container').forEach(e=>e.remove());
+
+  /* 4. Pintar */
+  const user = JSON.parse(localStorage.getItem('usuario')) || {};
+  posts.forEach(p=>{
+    const box = document.createElement('div');
+    box.className='post-container';
+
+    /* encabezado */
+    const head = document.createElement('div');
+    head.className='post-header';
+    const av   = document.createElement('div');
+    av.className='user-avatar';
+    if(user.avatar){
+      av.innerHTML=`<img src="data:image/jpeg;base64,${user.avatar}">`;
+    }else{
+      av.textContent=(user.nombre?.charAt(0) || 'U').toUpperCase();
+    }
+    head.append(av,
+      Object.assign(document.createElement('span'),{
+        innerHTML:`<strong>${user.nombre + user.apellido??'Usuario'}</strong>`}));
+    box.appendChild(head);
+
+    /* texto */
+    if(p.contenido){
+      const txt=document.createElement('p');
+      txt.className='post-text'; txt.textContent=p.contenido;
+      box.appendChild(txt);
+    }
+
+    /* ---------- IMAGENES ---------- */
+    if(p.imagenes.length){
+      if(p.imagenes.length<=4){                           // grid 1-4
+        const g=document.createElement('div');
+        g.className=`post-gallery cols-${p.imagenes.length}`;
+        p.imagenes.forEach(src=>{
+          const img=new Image(); img.src=`data:image/jpeg;base64,${src}`;
+          img.onclick=()=>openModalElem(img.cloneNode());
+          g.appendChild(img);
+        });
+        box.appendChild(g);
+      }else{                                              // >4: grid 2×2 + overlay
+        const g = document.createElement('div');
+    g.className = 'post-gallery cols-4';
+
+    const firstFour = p.imagenes.slice(0, 4);
+    firstFour.forEach((src, i) => {
+        const img = new Image();
+        img.src = `data:image/jpeg;base64,${src}`;
+        img.onclick = () => openCarouselModal(
+            [...p.imagenes.map(s=>({type:'img',src:s})),
+             ...p.videos.map(v=>({type:'vid',src:`../${v}`}))],
+            i                                          // empezar en la que clican
+        );
+        if (i === 3) {                                // último con overlay
+            const wrap = buildPlusOverlay(p.imagenes.length - 4);
+            wrap.appendChild(img);                    // imagen dentro del overlay
+            wrap.onclick = () => openCarouselModal(
+                [...p.imagenes.map(s=>({type:'img',src:s})),
+                 ...p.videos.map(v=>({type:'vid',src:`../${v}`}))],
+                3                                     // arranca en 4ª miniatura
+            );
+            g.appendChild(wrap);
+        } else {
+            g.appendChild(img);
+        }
+    });
+    box.appendChild(g);                 // añadimos el grid al post
+
+      }
+    }
+
+/* ---------- VIDEOS ---------- */
+if (p.videos.length) {
+
+/* ¿Hay imágenes? → NO pintes videos en el feed */
+const hayFotos = p.imagenes.length > 0;
+if (hayFotos) {
+    /* El video se verá en el modal junto a las imágenes */
+    // Nada que añadir al feed
+} else {
+
+    /* ----- sin imágenes, pinta videos ----- */
+    if (p.videos.length === 1) {          // un solo video ancho
+        const v = document.createElement('video');
+        v.src = `../${p.videos[0]}`;
+        v.controls = true;
+        v.className = 'post-video';
+        v.onclick = () => openCarouselModal(
+            [{ type: 'vid', src: v.src }],
+            0
+        );
+        box.appendChild(v);
+
+    } else if (p.videos.length <= 4) {    // 2-4 videos: grid
+        const vg = document.createElement('div');
+        vg.className = `post-video-grid cols-${p.videos.length}`;
+        p.videos.forEach((ruta, idx) => {
+            const v = document.createElement('video');
+            v.src = `../${ruta}`;
+            v.controls = true;
+            v.onclick = () => openCarouselModal(
+                p.videos.map(s => ({ type: 'vid', src: `../${s}` })),
+                idx
+            );
+            vg.appendChild(v);
+        });
+        box.appendChild(vg);
+
+    } else {                              // >4 videos: carrusel
+        box.appendChild(crearCarruselVideos(p.videos));
+    }
+}
+}
+
+
+    /* likes */
+    const lk=document.createElement('div');
+    lk.className='likes';
+    lk.innerHTML=`<i class="fas fa-heart"></i> ${p.likes} Me gusta`;
+    box.appendChild(lk);
+
+    cont.appendChild(box);
+  });
+}
+
+
+
+
+
+
+/* ---------- CARRUSEL DE IMÁGENES (>4) ---------- */
+function crearCarrusel(imgArr){
+  const car   = document.createElement('div');
+  car.className = 'carousel';
+
+  const track = document.createElement('div');
+  track.className = 'carousel-track';
+
+  imgArr.forEach(src=>{
+    const im = new Image();
+    im.src = `data:image/jpeg;base64,${src}`;
+    im.onclick = ()=> openModal(im.cloneNode());     // << modal aquí
+    track.appendChild(im);
+  });
+  car.appendChild(track);
+
+  let idx = 0;
+  const prev = navBtn('prev', -1);
+  const next = navBtn('next',  1);
+  car.append(prev, next);
+
+  function navBtn(cls,dir){
+    const b = document.createElement('button');
+    b.className = `nav ${cls}`;
+    b.innerHTML  = cls==='prev' ? '&#10094;' : '&#10095;';
+    b.onclick    = ()=> mover(dir);
+    return b;
+  }
+  function mover(d){
+    idx = (idx + d + imgArr.length) % imgArr.length;
+    track.style.transform = `translateX(-${idx*100}%)`;
+  }
+  return car;
+}
+
+/* ---------- CARRUSEL DE VIDEOS (>4) ---------- */
+function crearCarruselVideos(videos){
+  const car   = document.createElement('div');
+  car.className = 'carousel';
+
+  const track = document.createElement('div');
+  track.className = 'carousel-track';
+
+  videos.forEach(ruta=>{
+    const v = document.createElement('video');
+    v.src = `../${ruta}`;
+    v.controls = true;
+    v.onclick  = ()=>{
+        const big = document.createElement('video');
+        big.src = v.src; big.controls = true; big.autoplay = true;
+        openModal(big);                               // << modal aquí
+    };
+    track.appendChild(v);
+  });
+  car.appendChild(track);
+
+  let idx = 0;
+  const prev = navBtn('prev',-1);
+  const next = navBtn('next', 1);
+  car.append(prev,next);
+
+  function navBtn(cls,dir){
+    const b = document.createElement('button');
+    b.className = `nav ${cls}`;
+    b.innerHTML = cls==='prev' ? '&#10094;' : '&#10095;';
+    b.onclick   = ()=> mover(dir);
+    return b;
+  }
+  function mover(d){
+    idx = (idx + d + videos.length) % videos.length;
+    track.style.transform = `translateX(-${idx*100}%)`;
+  }
+  return car;
+}
+
+//PUBLICACIONES 
+
+
+//END
 function cerrarSesion() {
     localStorage.removeItem('usuario');
     sessionStorage.removeItem('usuario');

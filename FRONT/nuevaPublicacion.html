@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostNet - Nueva Publicación</title>
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="nuevaPublicacion.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="main.html"><i class="fas fa-home"></i><br></a>
+        <a href="likes.html"><i class="fas fa-heart"></i><br></a>
+        <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a>
+        <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
+        <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="header">
+            <h1>Nueva publicación</h1>
+            <div class="usuario-header" id="usuarioHeader">
+                <span id="nombreUsuario">Usuario</span>
+                <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
+            </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="post-container">
+            <textarea id="contenido" maxlength="1000" placeholder="¿Qué estás pensando?" class="input-area"></textarea>
+
+            <label class="custom-file-label">Subir imágenes (hasta 10)
+                <input type="file" id="imagenes" name="imagenes[]" accept="image/*" multiple class="custom-file-input">
+            </label>
+
+            <label class="custom-file-label">Subir videos (hasta 4)
+                <input type="file" id="videos" name="videos[]" accept="video/*" multiple class="custom-file-input">
+            </label>
+
+            <label class="custom-select-label">Privacidad</label>
+            <select id="privacidad" class="custom-select">
+                <option value="publico">Público</option>
+                <option value="privado">Privado</option>
+                <option value="amigos">Amigos</option>
+            </select>
+
+            <label class="custom-select-label">Permitir comentarios de</label>
+            <select id="restriccion" class="custom-select">
+                <option value="publico">Público</option>
+                <option value="Nadie">Nadie</option>
+                <option value="Solo amigos">Solo amigos</option>
+            </select>
+
+            <h3 style="margin-top: 20px;">Vista previa:</h3>
+            <div class="preview-container" id="preview"></div>
+
+            <button class="search-btn publicar-btn">Publicar</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          /* ---- datos de sesión ---- */
+          const usuario = JSON.parse(localStorage.getItem('usuario')) ||
+                          JSON.parse(sessionStorage.getItem('usuario'));
+          if (!usuario) return location.href = 'login.html';
+          document.getElementById('nombreUsuario').textContent = usuario.nombre;
+        
+          /* ---- refs ---- */
+          const txt        = document.getElementById('contenido');
+          const imgInput   = document.getElementById('imagenes');
+          const vidInput   = document.getElementById('videos');
+          const preview    = document.getElementById('preview');
+          const btnPub     = document.querySelector('.publicar-btn');
+        
+          /* ---- límites ---- */
+          const LIM_IMG   = 10;
+          const LIM_VID   = 4;
+          const LIM_TXT   = 1000;          /* ya está en maxlength, sirve de backup */
+          const MAX_TOTAL_MB = 64;     /* 64 MB por publicación */
+        
+          /* ---- util ---- */
+          const toast = msg => alert(msg); // cámbialo por tu sistema de notificaciones
+
+          function filesTotalSizeMB(){
+            let bytes = 0;
+            [...imgInput.files, ...vidInput.files].forEach(f => bytes += f.size);
+            return bytes / (1024*1024);
+            }
+        
+          /* ---- validación live ---- */
+        function checkValidity(){
+        const okImgs = imgInput.files.length <= LIM_IMG;
+        const okVids = vidInput.files.length <= LIM_VID;
+        const okTxt  = txt.value.length   <= LIM_TXT;
+        const okSize = filesTotalSizeMB() <= MAX_TOTAL_MB;
+
+        if (!okSize){
+            toast(`El conjunto de archivos supera ${MAX_TOTAL_MB} MB`);
+        }
+        btnPub.disabled = !(okImgs && okVids && okTxt && okSize);
+        }
+
+        
+          /* ---- vista previa ---- */
+          function showPreview (files, tag) {
+            for (const f of files) {
+              const rd = new FileReader();
+              rd.onload = e => {
+                const el = document.createElement(tag);
+                el.src   = e.target.result;
+                el.className = 'preview-media';
+                if (tag === 'video') el.controls = true;
+                preview.appendChild(el);
+              };
+              rd.readAsDataURL(f);
+            }
+          }
+        
+          imgInput.addEventListener('change', () => {
+            if (imgInput.files.length > LIM_IMG) {
+              toast(`Máximo ${LIM_IMG} imágenes`);
+              imgInput.value = '';          // limpia selección
+              return;
+            }
+            preview.innerHTML = '';
+            showPreview(imgInput.files, 'img');
+            checkValidity();
+          });
+        
+          vidInput.addEventListener('change', () => {
+            if (vidInput.files.length > LIM_VID) {
+              toast(`Máximo ${LIM_VID} videos`);
+              vidInput.value = '';
+              return;
+            }
+            showPreview(vidInput.files, 'video');
+            checkValidity();
+          });
+        
+          txt.addEventListener('input', checkValidity);
+        
+          /* ------------- enviar ------------- */
+          btnPub.addEventListener('click', async () => {
+            if (btnPub.disabled) return;          // seguridad extra
+        
+            const fd = new FormData();
+            fd.append('id_usuario', usuario.id_usuario);
+            fd.append('contenido',  txt.value.trim());
+            fd.append('privacidad', document.getElementById('privacidad').value);
+            fd.append('restringir_comentarios',
+                      document.getElementById('restriccion').value);
+        
+            [...imgInput.files].forEach(f => fd.append('imagenes[]', f));
+            [...vidInput.files].forEach(f => fd.append('videos[]',   f));
+        
+            try {
+              const r  = await fetch('../BACKEND/Controlador/Publicacion_insertar.php',
+                                     { method:'POST', body:fd });
+              const js = await r.json();
+              if (js.status === 'success') {
+                toast('¡Publicación creada!');
+                location.reload();
+              } else {
+                toast('Error: '+js.message);
+              }
+            } catch(e){ console.error(e); toast('Fallo en la petición'); }
+          });
+        
+          /* inicia con validar */
+          checkValidity();
+        });
+        
+      
+            function cerrarSesion() {
+                // Eliminar el usuario de sessionStorage y localStorage
+                sessionStorage.removeItem('usuario');
+                localStorage.removeItem('usuario');
+                // Redirigir a la página de inicio de sesión
+                window.location.href = 'login.html';
+            }    
+    </script>    
+</body>
+</html>

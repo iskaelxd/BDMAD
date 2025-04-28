@@ -135,7 +135,8 @@
                         let res = JSON.parse(response);
                         if (res.status === 'success') {
                             alert("✅ Registro exitoso");
-                            $('#registroForm')[0].reset();
+                            //$('#registroForm')[0].reset();
+                            location.href = "login.html"; // Redirige si el registro fue exitioso
                         } else {
                             alert("❌ Error: " + res.message);
                         }
