@@ -50,6 +50,7 @@ body {
     background-color: #333;
 }
 
+/* Encabezado del usuario (arriba a la derecha) */
 .usuario-header {
     position: absolute;
     top: 15px;
@@ -62,6 +63,7 @@ body {
 .usuario-header span {
     font-weight: bold;
 }
+
 
 .cerrar-btn {
     background-color: #ff4d4d;
@@ -259,3 +261,143 @@ body {
     }
 }
 
+    /* 1️⃣  El header ahora es relativo y guarda un “hueco” a la derecha
+       equivalente al ancho del bloque usuario-header (≈180 px). */
+
+
+
+/* Likes */
+.likes {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+    color: #bbbbbb;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.likes i {
+    margin-right: 5px;
+    font-size: 18px;
+    transition: color 0.3s;
+}
+
+.likes:hover i {
+    color: #e91e63;
+}
+
+.post-container   { background:#1e1e1e; margin:20px 0; padding:15px; border-radius:8px; }
+.post-header      { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.user-avatar      { width:40px; height:40px; border-radius:50%; background:#555; color:#fff;
+                    display:flex; align-items:center; justify-content:center; font-weight:bold; }
+.post-image       { width:100%; max-height:400px; object-fit:cover; margin-top:10px; border-radius:6px; }
+.post-video       { width:100%; max-height:400px; margin-top:10px; border-radius:6px; }
+.likes            { color:#bbbbbb; font-size:14px; margin-top:8px; }
+
+/* ----- contenedor grid/carrusel ----- */
+.post-gallery { width:100%; display:grid; gap:4px; margin-top:8px; }
+.post-gallery img { width:100%; height:100%; object-fit:cover; border-radius:6px; }
+
+/* 1 imagen */
+.post-gallery.cols-1 { grid-template-columns:1fr; height:auto; }
+
+/* 2 imágenes */
+.post-gallery.cols-2 { grid-template-columns:1fr 1fr; height:300px; }
+
+/* 3 imágenes (2 arriba, 1 abajo) */
+.post-gallery.cols-3 {
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:150px 150px;
+}
+.post-gallery.cols-3 img:nth-child(3) {
+  grid-column:1 / span 2;   /* ocupa toda la fila inferior */
+}
+
+/* 4 imágenes */
+.post-gallery.cols-4 { grid-template-columns:1fr 1fr; grid-auto-rows:150px; }
+
+/* -------- carrusel (>4) -------- */
+
+.carousel { position:relative; overflow:hidden; height:80vh; }
+.carousel-track { display:flex; transition:transform .4s ease; }
+.carousel img {
+    flex:0 0 100%;
+    object-fit:contain;               /* antes cover */
+    background:#000;
+    max-height:80vh;
+}
+.carousel-track video{
+    flex:0 0 100%;
+    object-fit:contain;               /* antes cover */
+    background:#000;
+    max-height:80vh;
+}
+
+  
+/* flechas dentro del carrusel-modal */
+.carousel .nav{
+    position:absolute; top:50%; transform:translateY(-50%);
+    background:rgba(0,0,0,.55);
+    border:none;
+    width:38px; height:38px;
+    border-radius:50%;
+    color:#fff; font-size:22px;
+    cursor:pointer; user-select:none;
+}
+.carousel .prev{ left:8px;  }
+.carousel .next{ right:8px; }
+
+
+/* ------ IMAGEN: mostrar todo, sin recorte ------ */
+.post-gallery img { object-fit: contain; background:#000; aspect-ratio:1/1; }
+
+/* ------ VIDEO GRID ------ */
+.post-video-grid      { display:grid; width:100%; gap:4px; margin-top:8px; }
+.post-video-grid video{ width:100%; height:100%; object-fit:cover; border-radius:6px; }
+
+.post-video-grid.cols-1 { grid-template-columns:1fr; }
+.post-video-grid.cols-2 { grid-template-columns:1fr 1fr; height:300px; }
+.post-video-grid.cols-3 { grid-template-columns:1fr 1fr; grid-template-rows:150px 150px; }
+.post-video-grid.cols-3 video:nth-child(3){ grid-column:1/ span 2; }
+.post-video-grid.cols-4 { grid-template-columns:1fr 1fr; grid-auto-rows:150px; }
+
+/* ------ Carrusel de videos (>4) reutiliza .carousel ------ */
+.carousel video { flex:0 0 100%; object-fit:cover; }
+
+/* ---------- Modal ---------- */
+.modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.85);
+    display:flex; align-items:center; justify-content:center;
+    z-index:1000; animation:fadeIn .25s;
+  }
+  .modal-content{ max-width:90vw; max-height:90vh; }
+  .modal-content img,
+  .modal-content video{ width:100%; height:100%; object-fit:contain; border-radius:8px; }
+  .modal-close{
+    position:absolute; top:15px; right:20px; font-size:32px; color:#fff;
+    cursor:pointer; user-select:none;
+  }
+  @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+  
+  /* ---------- avatar en post-header ---------- */
+  .post-header .user-avatar img{
+    width:100%; height:100%; border-radius:50%; object-fit:cover;
+  }
+  
+/* ===== Ajuste de tamaño dentro del modal ===== */
+.modal-content img,
+.modal-content video{
+    max-width:  100%;
+    max-height: 80vh;   /* 80% de la altura visible */
+    object-fit: contain;
+}
+
+/* main.css o likes.css */
+.likes i {
+  cursor: pointer;
+  transition: color .25s;
+}
+
+.likes i.liked {           /* corazón encendido */
+  color: #e0245e;          /* rojo estilo Threads/Twitter */
+}

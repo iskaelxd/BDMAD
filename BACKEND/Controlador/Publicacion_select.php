@@ -14,7 +14,13 @@ try {
     }
 
     $dao   = new Publicaciones();
-    $posts = $dao->obtener(['id_usuario' => (int)$_POST['id_usuario']]);
+   // $posts = $dao->obtener(['id_usuario' => (int)$_POST['id_usuario']]);
+    $viewer = $_POST['viewer'] ?? $_POST['id_usuario'];  // fallback a dueño del perfil
+
+        $posts = $dao->obtener([
+            'id_usuario' => (int)$_POST['id_usuario'],
+            'viewer'     => (int)$viewer
+        ]);
 
     /* —— Convierte BLOBs a Base64 —— */
     foreach ($posts as &$p) {

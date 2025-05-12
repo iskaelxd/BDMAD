@@ -1,187 +1,215 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PostNet - Nueva Publicación</title>
-    <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="nuevaPublicacion.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>PostNet – Nueva / Editar publicación</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="nuevaPublicacion.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    .preview-container{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+    .preview-item{position:relative;width:120px;height:120px;border-radius:6px;overflow:hidden;}
+    .preview-item img,.preview-item video{width:100%;height:100%;object-fit:cover;}
+    .remove-btn{position:absolute;top:-6px;right:-6px;background:#f44336;border:none;width:22px;height:22px;border-radius:50%;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 4px rgba(0,0,0,.4);}
+    .preview-item.removed::after{
+    content:"";
+    position:absolute;inset:0;
+    background:rgba(0,0,0,.55);
+  }
+  .preview-item.removed video,
+  .preview-item.removed img{ filter:grayscale(100%); }
+
+  </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <a href="main.html"><i class="fas fa-home"></i><br></a>
-        <a href="likes.html"><i class="fas fa-heart"></i><br></a>
-        <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a>
-        <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
-        <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <a href="main.html"><i class="fas fa-home"></i><br></a>
+    <a href="likes.html"><i class="fas fa-heart"></i><br></a>
+    <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a>
+    <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
+    <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
+  </div>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <div class="header">
+      <h1>Nueva publicación</h1>
+      <div class="usuario-header" id="usuarioHeader">
+        <span id="nombreUsuario">Usuario</span>
+        <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
+      </div>
     </div>
 
-    <!-- Main Container -->
-    <div class="main-container">
-        <div class="header">
-            <h1>Nueva publicación</h1>
-            <div class="usuario-header" id="usuarioHeader">
-                <span id="nombreUsuario">Usuario</span>
-                <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
-            </div>
-        </div>
+    <!-- Formulario -->
+    <div class="post-container">
+      <textarea id="contenido" maxlength="1000" placeholder="¿Qué estás pensando?" class="input-area"></textarea>
 
-        <!-- Formulario -->
-        <div class="post-container">
-            <textarea id="contenido" maxlength="1000" placeholder="¿Qué estás pensando?" class="input-area"></textarea>
+      <label class="custom-file-label">Subir imágenes (hasta 10)
+        <input type="file" id="imagenes" accept="image/*" multiple class="custom-file-input" />
+      </label>
 
-            <label class="custom-file-label">Subir imágenes (hasta 10)
-                <input type="file" id="imagenes" name="imagenes[]" accept="image/*" multiple class="custom-file-input">
-            </label>
+      <label class="custom-file-label">Subir videos (hasta 4)
+        <input type="file" id="videos" accept="video/*" multiple class="custom-file-input" />
+      </label>
 
-            <label class="custom-file-label">Subir videos (hasta 4)
-                <input type="file" id="videos" name="videos[]" accept="video/*" multiple class="custom-file-input">
-            </label>
+      <label class="custom-select-label">Privacidad</label>
+      <select id="privacidad" class="custom-select">
+        <option value="publico">Público</option>
+        <option value="privado">Privado</option>
+        <option value="amigos">Amigos</option>
+      </select>
 
-            <label class="custom-select-label">Privacidad</label>
-            <select id="privacidad" class="custom-select">
-                <option value="publico">Público</option>
-                <option value="privado">Privado</option>
-                <option value="amigos">Amigos</option>
-            </select>
+      <label class="custom-select-label">Permitir comentarios de</label>
+      <select id="restriccion" class="custom-select">
+        <option value="publico">Público</option>
+        <option value="Nadie">Nadie</option>
+        <option value="Solo amigos">Solo amigos</option>
+      </select>
 
-            <label class="custom-select-label">Permitir comentarios de</label>
-            <select id="restriccion" class="custom-select">
-                <option value="publico">Público</option>
-                <option value="Nadie">Nadie</option>
-                <option value="Solo amigos">Solo amigos</option>
-            </select>
+      <h3 style="margin:20px 0 8px;">Vista previa (<span id="peso">0</span>/64 MB)</h3>
+      <div id="preview" class="preview-container"></div>
 
-            <h3 style="margin-top: 20px;">Vista previa:</h3>
-            <div class="preview-container" id="preview"></div>
-
-            <button class="search-btn publicar-btn">Publicar</button>
-        </div>
+      <button class="search-btn publicar-btn" disabled>Publicar</button>
     </div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          /* ---- datos de sesión ---- */
-          const usuario = JSON.parse(localStorage.getItem('usuario')) ||
-                          JSON.parse(sessionStorage.getItem('usuario'));
-          if (!usuario) return location.href = 'login.html';
-          document.getElementById('nombreUsuario').textContent = usuario.nombre;
-        
-          /* ---- refs ---- */
-          const txt        = document.getElementById('contenido');
-          const imgInput   = document.getElementById('imagenes');
-          const vidInput   = document.getElementById('videos');
-          const preview    = document.getElementById('preview');
-          const btnPub     = document.querySelector('.publicar-btn');
-        
-          /* ---- límites ---- */
-          const LIM_IMG   = 10;
-          const LIM_VID   = 4;
-          const LIM_TXT   = 1000;          /* ya está en maxlength, sirve de backup */
-          const MAX_TOTAL_MB = 64;     /* 64 MB por publicación */
-        
-          /* ---- util ---- */
-          const toast = msg => alert(msg); // cámbialo por tu sistema de notificaciones
+<script>
+/*****  CONSTANTES *****/
+const LIM_IMG=10,LIM_VID=4,MAX_MB=64;
 
-          function filesTotalSizeMB(){
-            let bytes = 0;
-            [...imgInput.files, ...vidInput.files].forEach(f => bytes += f.size);
-            return bytes / (1024*1024);
-            }
-        
-          /* ---- validación live ---- */
-        function checkValidity(){
-        const okImgs = imgInput.files.length <= LIM_IMG;
-        const okVids = vidInput.files.length <= LIM_VID;
-        const okTxt  = txt.value.length   <= LIM_TXT;
-        const okSize = filesTotalSizeMB() <= MAX_TOTAL_MB;
+/*****  VARIABLES DE ESTADO *****/
+let newImgs=[],newVids=[];            // archivos seleccionados ahora
+let keepOldImgs=[],keepOldVids=[];    // adjuntos originales que se quedan
+let removedOld=false;                 // el usuario quitó alguno de los viejos
+let delOldImgs=[], delOldVids=[];        // adjuntos antiguos marcados
 
-        if (!okSize){
-            toast(`El conjunto de archivos supera ${MAX_TOTAL_MB} MB`);
-        }
-        btnPub.disabled = !(okImgs && okVids && okTxt && okSize);
-        }
+/*****  UTILS *****/
+const toast=m=>alert(m);
+const mb=b=>(b/(1024*1024)).toFixed(1);
+function totalMB(){return ([...newImgs,...newVids].reduce((a,f)=>a+f.size,0))/(1024*1024);}  
+function actualizarPeso(){document.getElementById('peso').textContent=mb(totalMB());}
+function validar(){const btn=document.querySelector('.publicar-btn');const ok= document.getElementById('contenido').value.trim().length||newImgs.length||newVids.length||keepOldImgs.length||keepOldVids.length; const sizeOK=totalMB()<=MAX_MB; btn.disabled=!(ok&&sizeOK); if(!sizeOK) toast('El total de archivos supera 64 MB');}
 
-        
-          /* ---- vista previa ---- */
-          function showPreview (files, tag) {
-            for (const f of files) {
-              const rd = new FileReader();
-              rd.onload = e => {
-                const el = document.createElement(tag);
-                el.src   = e.target.result;
-                el.className = 'preview-media';
-                if (tag === 'video') el.controls = true;
-                preview.appendChild(el);
-              };
-              rd.readAsDataURL(f);
-            }
-          }
-        
-          imgInput.addEventListener('change', () => {
-            if (imgInput.files.length > LIM_IMG) {
-              toast(`Máximo ${LIM_IMG} imágenes`);
-              imgInput.value = '';          // limpia selección
-              return;
-            }
-            preview.innerHTML = '';
-            showPreview(imgInput.files, 'img');
-            checkValidity();
-          });
-        
-          vidInput.addEventListener('change', () => {
-            if (vidInput.files.length > LIM_VID) {
-              toast(`Máximo ${LIM_VID} videos`);
-              vidInput.value = '';
-              return;
-            }
-            showPreview(vidInput.files, 'video');
-            checkValidity();
-          });
-        
-          txt.addEventListener('input', checkValidity);
-        
-          /* ------------- enviar ------------- */
-          btnPub.addEventListener('click', async () => {
-            if (btnPub.disabled) return;          // seguridad extra
-        
-            const fd = new FormData();
-            fd.append('id_usuario', usuario.id_usuario);
-            fd.append('contenido',  txt.value.trim());
-            fd.append('privacidad', document.getElementById('privacidad').value);
-            fd.append('restringir_comentarios',
-                      document.getElementById('restriccion').value);
-        
-            [...imgInput.files].forEach(f => fd.append('imagenes[]', f));
-            [...vidInput.files].forEach(f => fd.append('videos[]',   f));
-        
-            try {
-              const r  = await fetch('../BACKEND/Controlador/Publicacion_insertar.php',
-                                     { method:'POST', body:fd });
-              const js = await r.json();
-              if (js.status === 'success') {
-                toast('¡Publicación creada!');
-                location.reload();
-              } else {
-                toast('Error: '+js.message);
-              }
-            } catch(e){ console.error(e); toast('Fallo en la petición'); }
-          });
-        
-          /* inicia con validar */
-          checkValidity();
-        });
-        
-      
-            function cerrarSesion() {
-                // Eliminar el usuario de sessionStorage y localStorage
-                sessionStorage.removeItem('usuario');
-                localStorage.removeItem('usuario');
-                // Redirigir a la página de inicio de sesión
-                window.location.href = 'login.html';
-            }    
-    </script>    
+/*****  MANEJO DE FILELIST (DataTransfer) *****/
+function refrescarInputs(){
+  const dtI=new DataTransfer();newImgs.forEach(f=>dtI.items.add(f));document.getElementById('imagenes').files=dtI.files;
+  const dtV=new DataTransfer();newVids.forEach(f=>dtV.items.add(f));document.getElementById('videos').files=dtV.files;
+}
+
+/*****  PREVIEW NUEVO *****/
+function addPreview(file,kind){
+  const box=document.createElement('div');box.className='preview-item';
+  const media=kind==='img'?new Image():document.createElement('video');
+  media.src=URL.createObjectURL(file);if(kind==='vid')media.controls=true;
+  const x=document.createElement('button');x.className='remove-btn';x.innerHTML='&times;';
+  x.onclick=()=>{if(kind==='img'){newImgs=newImgs.filter(f=>f!==file);}else{newVids=newVids.filter(f=>f!==file);}box.remove();refrescarInputs();actualizarPeso();validar();};
+  box.append(media,x);document.getElementById('preview').appendChild(box);
+}
+
+function toggleOld(src,kind,box){
+  if(box.classList.contains('removed')){   // restaurar
+      box.classList.remove('removed');
+      if(kind==='img'){
+          delOldImgs = delOldImgs.filter(s=>s!==src);
+          keepOldImgs.push(src);
+      }else{
+          delOldVids = delOldVids.filter(s=>s!==src);
+          keepOldVids.push(src);
+      }
+  }else{                                   // marcar para borrar
+      box.classList.add('removed');
+      if(kind==='img'){
+          keepOldImgs = keepOldImgs.filter(s=>s!==src);
+          delOldImgs.push(src);
+      }else{
+          keepOldVids = keepOldVids.filter(s=>s!==src);
+          delOldVids.push(src);
+      }
+  }
+  removedOld = (delOldImgs.length + delOldVids.length) > 0;
+  validar();
+}
+
+
+
+
+/*****  PREVIEW DE ARCHIVOS ANTIGUOS *****/
+function renderOld(src,kind){
+  const box=document.createElement('div');
+  box.className='preview-item';
+  const media = kind==='img'?new Image():document.createElement('video');
+  media.src = kind==='img' ? `data:image/jpeg;base64,${src}` : `../${src}`;
+  if(kind==='vid') media.controls=true;
+
+  const x=document.createElement('button');
+  x.className='remove-btn'; x.innerHTML='&times;';
+  x.onclick=()=>toggleOld(src,kind,box);
+
+  box.append(media,x);
+  document.getElementById('preview').appendChild(box);
+}
+
+
+/*****  INPUT CHANGE *****/
+document.getElementById('imagenes').onchange=e=>{
+  const files=[...e.target.files];
+  if(newImgs.length+files.length> LIM_IMG){toast(`Máximo ${LIM_IMG} imágenes`);e.target.value='';return;}
+  files.forEach(f=>{newImgs.push(f);addPreview(f,'img');});
+  refrescarInputs();actualizarPeso();validar();
+};
+
+document.getElementById('videos').onchange=e=>{
+  const files=[...e.target.files];
+  if(newVids.length+files.length> LIM_VID){toast(`Máximo ${LIM_VID} videos`);e.target.value='';return;}
+  files.forEach(f=>{newVids.push(f);addPreview(f,'vid');});
+  refrescarInputs();actualizarPeso();validar();
+};
+
+document.getElementById('contenido').oninput=validar;
+
+/*****  CARGAR PUBLICACIÓN PARA EDITAR *****/
+function cargarPublicacion(id){
+  fetch('../BACKEND/Controlador/Publicacion_get.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`id_post=${id}`})
+  .then(r=>r.text()).then(t=>{try{return JSON.parse(t);}catch(e){console.error('NO JSON',t);throw e;}})
+  .then(js=>{
+    if(js.status!=='success'||!js.data.length) throw Error();
+    const p=js.data[0];
+    document.getElementById('contenido').value=p.contenido||'';
+    document.getElementById('privacidad').value=p.privacidad||'publico';
+    document.getElementById('restriccion').value=p.restringir_comentarios||'publico';
+    keepOldImgs=[...(p.imagenes||[])]; keepOldVids=[...(p.videos||[])];
+    keepOldImgs.forEach(s=>renderOld(s,'img')); keepOldVids.forEach(v=>renderOld(v,'vid'));
+    validar();
+  }).catch(()=>toast('No se pudo cargar publicación'));
+}
+
+/*****  ENVIAR *****/
+async function enviar(){
+  if(document.querySelector('.publicar-btn').disabled) return;
+  const fd=new FormData();const user=JSON.parse(localStorage.getItem('usuario'))||JSON.parse(sessionStorage.getItem('usuario'));
+  fd.append('id_usuario',user.id_usuario);
+  fd.append('contenido',document.getElementById('contenido').value.trim());
+  fd.append('privacidad',document.getElementById('privacidad').value);
+  fd.append('restringir_comentarios',document.getElementById('restriccion').value);
+  const editId=new URLSearchParams(location.search).get('edit');const editMode=!!editId;
+ if(editMode){
+   fd.append('id_post',editId);
+   if(removedOld) fd.append('replace_media',1);
+}
+
+  newImgs.forEach(f=>fd.append('imagenes[]',f)); newVids.forEach(f=>fd.append('videos[]',f));
+  const url=editMode?'../BACKEND/Controlador/Publicacion_actualizar.php':'../BACKEND/Controlador/Publicacion_insertar.php';
+  try{const r=await fetch(url,{method:'POST',body:fd});const js=await r.json();if(js.status==='success'){toast(editMode?'Publicación actualizada ✅':'¡Publicación creada! ✅');location.href='myProfile.html';}else toast(js.message);}catch(e){toast('Fallo de red');}
+}
+
+document.querySelector('.publicar-btn').onclick=enviar;
+
+/*****  INIT *****/
+(function(){const u=JSON.parse(localStorage.getItem('usuario'))||JSON.parse(sessionStorage.getItem('usuario'));if(!u)return location.href='login.html';document.getElementById('nombreUsuario').textContent=u.nombre; const editId=new URLSearchParams(location.search).get('edit');if(editId){document.querySelector('h1').textContent='Editar publicación';document.querySelector('.publicar-btn').textContent='Actualizar';cargarPublicacion(editId);}actualizarPeso();})();
+
+function cerrarSesion(){sessionStorage.removeItem('usuario');localStorage.removeItem('usuario');location.href='login.html';}
+</script>
 </body>
 </html>

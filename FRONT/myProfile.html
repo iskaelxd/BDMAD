@@ -8,6 +8,17 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- ====== MINI-ESTILOS PARA EL MENÚ DE CADA POST ====== -->
+    <style>
+      .post-header{display:flex;justify-content:space-between;align-items:center;}
+      .post-menu-btn{background:transparent;border:none;color:#bbbbbb;font-size:18px;cursor:pointer;padding:4px;}
+      .post-menu-btn:hover{color:#ffffff;}
+      .post-menu{position:absolute;background:#2a2a2a;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.4);z-index:1000;min-width:160px;}
+      .post-menu ul{list-style:none;margin:0;padding:6px 0;}
+      .post-menu li{padding:8px 16px;color:#eee;cursor:pointer;font-size:14px;}
+      .post-menu li:hover{background:#444;}
+    </style>
 </head>
 <body>
 
@@ -15,36 +26,32 @@
     <div class="sidebar">
         <a href="main.html"><i class="fas fa-home"></i><br></a>
         <a href="likes.html"><i class="fas fa-heart"></i><br></a>
-        <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a> <!-- Nuevo botón para agregar publicación -->
+        <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a>
         <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
         <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
     </div>
 
     <!-- Contenido Principal -->
     <div class="main-container">
-        
-        <!-- Encabezado con Búsqueda -->
+        <!-- Encabezado -->
         <div class="header">
             <h1>PostNet</h1>
             <input type="text" class="search-bar" placeholder="Buscar">
             <button class="search-btn">Buscar</button>
-            <!-- Usuario y Cerrar Sesión -->
             <div class="usuario-header" id="usuarioHeader">
                 <span id="nombreUsuario">Usuario</span>
                 <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
             </div>
         </div>
 
-                  <!-- Perfil -->
+        <!-- Perfil -->
         <div class="profile-container">
             <div class="profile-header">
                 <div class="profile-info">
-                    <!-- Avatar circular -->
                     <div class="profile-avatar" id="profileAvatar">T</div>
                     <div>
                         <strong id="profileName">myProfile</strong>
-                      <p id="followersCount" style="color: #bbbbbb; font-size: 12px;">50 Followers</p>
-                        <!-- Elemento para mostrar la biografía -->
+                        <p id="followersCount" style="color:#bbbbbb;font-size:12px;">50 Followers</p>
                         <p id="profileBio"></p>
                     </div>
                 </div>
@@ -57,462 +64,166 @@
             </div>
         </div>
 
-        <!-- Publicaciones -->
-        <div class="post-container">
-            <div class="post-header">
-                <div class="user-avatar">T</div>
-                <span><strong>Usuario T</strong></span>
-            </div>
-            <p class="post-text">Mi primera publicación en PostNet.</p>
-            <div class="post-image"></div>
-            <div class="likes"><i class="fas fa-heart"></i> 15 Me gusta</div>
-        </div>
-
+        <!-- CONTENEDOR DE PUBLICACIONES -->
+        <div id="postFeed"></div>
     </div>
+
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-    let usuario = JSON.parse(localStorage.getItem('usuario'));
-
-    if (!usuario) {
-        // Si no existe en localStorage, lo busco en sessionStorage
-        usuario = JSON.parse(sessionStorage.getItem('usuario'));
-    }
-
-    if (usuario) {
-        document.getElementById("nombreUsuario").textContent = usuario.nombre;
-        console.log(usuario.email); // Muestra el nombre del usuario en la consola
-        obtenerDatosUsuario(usuario.email); // Llama a la función para obtener datos del usuario
-        //obtenerPublicaciones(usuario.id_usuario); // Llama a la función para obtener publicaciones del usuario
-    } else {
-        location.href = "login.html"; // Redirige si no está logueado en ninguna de las dos
-    }
+/***** =============== GLOBALES =============== *****/
+let openPostMenu = null;   // referencia al menú desplegado actual
+const user = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(sessionStorage.getItem('usuario'));
+/***** =============== SESIÓN =============== *****/
+document.addEventListener("DOMContentLoaded", () => {
+  const usuario = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(sessionStorage.getItem('usuario'));
+  if (!usuario) return (location.href = "login.html");
+  //user = usuario;
+  document.getElementById("nombreUsuario").textContent = usuario.nombre;
+  obtenerDatosUsuario(usuario.email);
 });
 
-
-function obtenerDatosUsuario(email) {
-    $.ajax({
-        url: '../BACKEND/Controlador/Usuario_select.php',
-        type: 'POST',
-        data: { email: email },
-        success: function (response) {
-    
-            
-            // 1. Convertir la respuesta en objeto JS
-            let res = JSON.parse(response);
-
-            // 2. Verificar que status sea 'success'
-            if (res.status === 'success' && res.data.length > 0) {
-                let userData = res.data[0]; 
-                
-                // 3. Insertar datos en el HTML
-                
-                // Nombre en la esquina superior
-                document.getElementById("nombreUsuario").textContent = userData.nombre;
-                
-                // Muestra nombre + apellido en el perfil
-                document.getElementById("profileName").textContent = userData.nombre + " " + userData.apellido;
-
-                // Bio
-                document.getElementById("profileBio").textContent = userData.bio ? userData.bio : "";
-
-                // Si deseas usar la inicial del nombre cuando no hay avatar
-                if (userData.nombre && userData.nombre.length > 0) {
-                    document.getElementById("profileAvatar").textContent = userData.nombre.charAt(0).toUpperCase();
-                }
-
-                // Si userData.avatar no es null, mostramos la imagen
-                if (userData.avatar) {
-                    let avatarBase64 = "data:image/jpeg;base64," + userData.avatar;
-                    let avatarElem = document.getElementById("profileAvatar");
-                    
-                    // Limpiar texto (inicial) y poner la imagen
-                    avatarElem.innerHTML = "";
-                    let imgTag = document.createElement("img");
-                    imgTag.src = avatarBase64;
-                    imgTag.alt = "Avatar";
-                    // Ajustamos el tamaño según el contenedor
-                    imgTag.style.width = "100%";
-                    imgTag.style.height = "100%";
-                    // Para que sea circular
-                    imgTag.style.borderRadius = "50%";
-                    imgTag.style.objectFit = "cover";
-
-                    avatarElem.appendChild(imgTag);
-                }
-
-                // 4. Guardamos en localStorage la info actualizada (opcional)
-                localStorage.setItem('usuario', JSON.stringify(userData));
-                console.log(userData.id_usuario);
-                obtenerPublicaciones(userData.id_usuario);   // <<—— aquí llamamos a la función para obtener publicaciones
-
-            } else {
-                console.log("No se encontró usuario o status !== success");
-            }
-        },
-        error: function (xhr, status, error) {
-            console.error(error);
-            alert("❌ Error al conectar con el servidor.");
-        }
-    });
+/***** =============== MENÚ DE OPCIONES POR POST =============== *****/
+function mostrarMenuPost(btn, post){
+  if(openPostMenu){ openPostMenu.remove(); openPostMenu=null; }
+  const menu=document.createElement('div');
+  menu.className='post-menu';
+  menu.innerHTML='<ul><li class="edit">Editar publicación</li><li class="delete">Eliminar publicación</li></ul>';
+  document.body.appendChild(menu);
+  const r=btn.getBoundingClientRect();
+  menu.style.top=(r.bottom+window.scrollY)+'px';
+  menu.style.left=Math.max(r.right-menu.offsetWidth,8)+'px';
+  menu.querySelector('.edit').onclick=()=>location.href=`nuevaPublicacion.html?edit=${post.id_post}`;
+  menu.querySelector('.delete').onclick=()=>{ if(confirm('¿Eliminar esta publicación?')) eliminarPublicacion(post.id_post); };
+  setTimeout(()=>{const h=e=>{if(!menu.contains(e.target)&&e.target!==btn){menu.remove();document.removeEventListener('click',h);openPostMenu=null;}};document.addEventListener('click',h);});
+  openPostMenu=menu;
 }
 
-//PUBLICACIONES 
-
-function obtenerPublicaciones(idUsuario) {
-    $.ajax({
-        url: '../BACKEND/Controlador/Publicacion_select.php',
-        type: 'POST',
-        data: { id_usuario: idUsuario },
-        dataType: 'json',              // <<<<<<
-        success: function (res) {      // jQuery ya lo parseó
-            if (res.status === 'success') {
-                console.log(res.data); // Para depuración
-                renderizarPublicaciones(res.data);
-            } else {
-                console.error(res.message);
-            }
-        },
-        error: function (xhr, _s, _e) {
-            console.error('Respuesta cruda del servidor:', xhr.responseText);
-        }
-    });
-}
-
-/* ---------- helpers ---------- */
-function openModalElem(elem){
-  const o = document.createElement('div');
-  o.className='modal-overlay';
-  const c = document.createElement('div');
-  c.className='modal-content'; c.appendChild(elem);
-  const x = document.createElement('span');
-  x.className='modal-close'; x.innerHTML='&times;';
-  x.onclick = ()=>o.remove();
-  o.append(c,x); o.onclick=e=>{ if(e.target===o) o.remove(); };
-  document.body.appendChild(o);
-}
-
-function buildPlusOverlay(count){
-  const wrap = document.createElement('div');
-  wrap.style.position='relative';
-  wrap.style.cursor='pointer';
-  wrap.innerHTML=`<div style="
-        position:absolute;inset:0;background:rgba(0,0,0,.55);
-        display:flex;align-items:center;justify-content:center;
-        font-size:40px;color:#fff;border-radius:6px;">+${count}</div>`;
-  return wrap;
-}
-
-/* ---------- Modal-Carrusel (imagenes + videos) ---------- */
-function openCarouselModal(mediaArr, startIdx = 0){
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-
-  /* track con diapositivas */
-  const track = document.createElement('div');
-  track.className = 'carousel-track';
-  track.style.height = '80vh';                // alto máximo del modal
-
-  mediaArr.forEach(item=>{
-    if(item.type === 'img'){
-      const im = new Image();
-      im.src = `data:image/jpeg;base64,${item.src}`;
-      im.style.objectFit = 'contain';
-      track.appendChild(im);
-    }else{
-      const v = document.createElement('video');
-      v.src = item.src; v.controls = true; v.style.objectFit='contain';
-      track.appendChild(v);
+function eliminarPublicacion(id_post){
+  $.ajax({
+    url: '../BACKEND/Controlador/publicacion_delete.php',   // ‹– misma ruta pero en minúsculas para consistencia
+    type: 'POST',
+    data: { id_post },
+    dataType: 'json',               // <- deja que jQuery parsee el JSON
+    success: res => {
+      if (res.status === 'success') {
+        document.querySelector(`.post-container[data-id="${id_post}"]`)?.remove();
+      } else {
+        alert(res.message || 'No se pudo eliminar la publicación');
+      }
+    },
+    error: xhr => {
+      console.error('Respuesta cruda del servidor:', xhr.responseText);
+      alert('❌ Error al conectar con el servidor');
     }
   });
+}
 
-  /* contenedor + nav */
-  const modalCar = document.createElement('div');
-  modalCar.className = 'carousel';
-  modalCar.style.height = '80vh';
-  modalCar.appendChild(track);
 
-  let idx = startIdx;
-  move(0);                                     // posición inicial
+/***** =============== PETICIONES AJAX =============== *****/
+function obtenerDatosUsuario(email){
+  $.ajax({url:'../BACKEND/Controlador/Usuario_select.php',type:'POST',data:{email},success:response=>{const res=JSON.parse(response);if(res.status==='success'&&res.data.length){const u=res.data[0];document.getElementById('nombreUsuario').textContent=u.nombre;document.getElementById('profileName').textContent=`${u.nombre} ${u.apellido}`;document.getElementById('profileBio').textContent=u.bio||'';if(u.nombre)document.getElementById('profileAvatar').textContent=u.nombre.charAt(0).toUpperCase();if(u.avatar){const av=document.getElementById('profileAvatar');av.innerHTML='';const img=new Image();img.src=`data:image/jpeg;base64,${u.avatar}`;img.alt='Avatar';img.style.width='100%';img.style.height='100%';img.style.objectFit='cover';img.style.borderRadius='50%';av.appendChild(img);}localStorage.setItem('usuario',JSON.stringify(u));obtenerPublicaciones(u.id_usuario);}},error:()=>alert('❌ Error al conectar con el servidor')});
+}
 
-  const prev = navBtn('prev',-1);
-  const next = navBtn('next', 1);
-  modalCar.append(prev,next);
+function obtenerPublicaciones(idUsuario){
+  $.ajax({url:'../BACKEND/Controlador/Publicacion_select.php',type:'POST',data:{id_usuario:idUsuario,viewer:idUsuario },dataType:'json',success:res=>{if(res.status==='success') renderizarPublicaciones(res.data);},error:xhr=>console.error('Respuesta cruda del servidor',xhr.responseText)});
+}
 
-  function navBtn(cls,dir){
-    const b=document.createElement('button');
-    b.className=`nav ${cls}`; b.innerHTML = cls==='prev'?'&#10094;':'&#10095;';
-    b.onclick=()=>move(dir);
-    return b;
+/***** =============== RENDERIZAR PUBLICACIONES =============== *****/
+function renderizarPublicaciones(filas){
+  const map={};
+  filas.forEach(r=>{if(!map[r.id_post]) map[r.id_post]={id_post:r.id_post,fecha:r.fecha_post,contenido:r.contenido,likes:r.total_likes ?? r.LIKES ?? 0,yo_like:r.yo_like ?? 0,nombre:r.nombre??'Yo',imagenes:[],videos:[]};if(r.imagen) map[r.id_post].imagenes.push(r.imagen);if(r.ruta_video&&!map[r.id_post].videos.includes(r.ruta_video)) map[r.id_post].videos.push(r.ruta_video);});
+  const posts=Object.values(map).sort((a,b)=>b.id_post-a.id_post);
+  const feed=document.getElementById('postFeed');
+  feed.innerHTML='';
+  const user=JSON.parse(localStorage.getItem('usuario'))||{};
+  posts.forEach(p=>{
+    const box=document.createElement('div');box.className='post-container';box.dataset.id=p.id_post;
+    const head=document.createElement('div');head.className='post-header';
+    const info=document.createElement('div');info.style.display='flex';info.style.gap='8px';info.style.alignItems='center';
+    const av=document.createElement('div');av.className='user-avatar';
+    if(user.avatar) av.innerHTML=`<img src="data:image/jpeg;base64,${user.avatar}">`; else av.textContent=(user.nombre?.charAt(0)||'U').toUpperCase();
+    const name=document.createElement('span');name.innerHTML=`<strong>${user.nombre} ${user.apellido||''}</strong>`;
+    info.append(av,name);
+    const menuBtn=document.createElement('button');menuBtn.className='post-menu-btn';menuBtn.innerHTML='<i class="fas fa-ellipsis-v"></i>';menuBtn.onclick=e=>{e.stopPropagation();mostrarMenuPost(menuBtn,p);} ;
+    head.append(info,menuBtn);
+    box.appendChild(head);
+    if(p.contenido){const t=document.createElement('p');t.className='post-text';t.textContent=p.contenido;box.appendChild(t);} 
+    if(p.imagenes.length){
+      if(p.imagenes.length<=4){const g=document.createElement('div');g.className=`post-gallery cols-${p.imagenes.length}`;p.imagenes.forEach(src=>{const im=new Image();im.src=`data:image/jpeg;base64,${src}`;im.onclick=()=>openModalElem(im.cloneNode());g.appendChild(im);});box.appendChild(g);}else{const g=document.createElement('div');g.className='post-gallery cols-4';p.imagenes.slice(0,4).forEach((src,i)=>{const im=new Image();im.src=`data:image/jpeg;base64,${src}`;im.onclick=()=>openCarouselModal([...p.imagenes.map(s=>({type:'img',src:s})),...p.videos.map(v=>({type:'vid',src:`../${v}`}))],i);if(i===3){const w=buildPlusOverlay(p.imagenes.length-4);w.appendChild(im);w.onclick=()=>openCarouselModal([...p.imagenes.map(s=>({type:'img',src:s})),...p.videos.map(v=>({type:'vid',src:`../${v}`}))],3);g.appendChild(w);}else g.appendChild(im);});box.appendChild(g);}}
+    if(p.videos.length&&!p.imagenes.length){if(p.videos.length===1){const v=document.createElement('video');v.src=`../${p.videos[0]}`;v.controls=true;v.className='post-video';v.onclick=()=>openCarouselModal([{type:'vid',src:v.src}],0);box.appendChild(v);}else if(p.videos.length<=4){const vg=document.createElement('div');vg.className=`post-video-grid cols-${p.videos.length}`;p.videos.forEach((ruta,idx)=>{const v=document.createElement('video');v.src=`../${ruta}`;v.controls=true;v.onclick=()=>openCarouselModal(p.videos.map(s=>({type:'vid',src:`../${s}`})),idx);vg.appendChild(v);});box.appendChild(vg);}else box.appendChild(crearCarruselVideos(p.videos));}
+    const like = document.createElement('div');
+    like.className = 'likes';
+    like.innerHTML = `<i class="fas fa-heart ${ Number(p.yo_like) ? 'liked' : '' }"></i><span class="like-count">${p.likes}</span> Me gusta`;like.onclick=()=>darLike(p.id_post,like);box.appendChild(like);
+    feed.appendChild(box);
+  });
+}
+
+async function darLike(idPost, node){
+  const heart      = node.querySelector('i');
+  const countLabel = node.querySelector('.like-count');
+
+  try{
+    const res = await fetch('../BACKEND/Controlador/Like_insert.php', {
+      method : 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body   : new URLSearchParams({ id_post:idPost, id_usuario:user.id_usuario })
+    });
+    const js = await res.json();
+
+    if (js.status === 'success') {
+        const delta = js.delta;          // +1 o -1
+        if (delta === 1)  heart.classList.add('liked');
+        if (delta === -1) heart.classList.remove('liked');
+
+        countLabel.textContent = Math.max(0, +countLabel.textContent + delta);
+    }
+  }catch(err){
+    console.error(err);
   }
-  function move(d){
-    idx = (idx + d + mediaArr.length) % mediaArr.length;
-    track.style.transform = `translateX(-${idx*100}%)`;
-  }
+}
 
-  /* overlay + close */
-  const close = document.createElement('span');
-  close.className='modal-close'; close.innerHTML='&times;';
-  close.onclick = ()=>overlay.remove();
-
-  overlay.append(modalCar, close);
-  overlay.onclick = e=>{ if(e.target===overlay) overlay.remove(); };
-
+/***** =============== HELPERS (modals, overlays, carruseles) =============== *****/
+function openModalElem(elem){
+  const overlay=document.createElement('div');overlay.className='modal-overlay';
+  const content=document.createElement('div');content.className='modal-content';content.appendChild(elem);
+  const close=document.createElement('span');close.className='modal-close';close.innerHTML='&times;';close.onclick=()=>overlay.remove();
+  overlay.append(content,close);overlay.onclick=e=>{if(e.target===overlay) overlay.remove();};
   document.body.appendChild(overlay);
 }
 
-
-/* ---------- función principal ---------- */
-function renderizarPublicaciones(filas){
-  /* 1. Agrupar por id_post */
-  const map = {};
-  filas.forEach(r => {
-    if (!map[r.id_post]) {
-        map[r.id_post] = {
-            id_post  : r.id_post,
-            fecha    : r.fecha_post,
-            contenido: r.contenido,
-            likes    : r.LIKES ?? 0,
-            nombre   : r.nombre ?? 'Yo',
-            imagenes : [],
-            videos   : []
-        };
-    }
-
-    if (r.imagen) map[r.id_post].imagenes.push(r.imagen);
-
-    /* 👉 añade solo si no existe todavía */
-    if (r.ruta_video && !map[r.id_post].videos.includes(r.ruta_video)) {
-        map[r.id_post].videos.push(r.ruta_video);
-    }
-});
-
-
-  /* 2. Ordenar más reciente primero */
-  const posts = Object.values(map).sort((a,b)=>b.id_post-a.id_post);
-
-  /* 3. Vaciar contenedor */
-  const cont = document.querySelector('.main-container');
-  cont.querySelectorAll('.post-container').forEach(e=>e.remove());
-
-  /* 4. Pintar */
-  const user = JSON.parse(localStorage.getItem('usuario')) || {};
-  posts.forEach(p=>{
-    const box = document.createElement('div');
-    box.className='post-container';
-
-    /* encabezado */
-    const head = document.createElement('div');
-    head.className='post-header';
-    const av   = document.createElement('div');
-    av.className='user-avatar';
-    if(user.avatar){
-      av.innerHTML=`<img src="data:image/jpeg;base64,${user.avatar}">`;
-    }else{
-      av.textContent=(user.nombre?.charAt(0) || 'U').toUpperCase();
-    }
-    head.append(av,
-      Object.assign(document.createElement('span'),{
-        innerHTML:`<strong>${user.nombre + user.apellido??'Usuario'}</strong>`}));
-    box.appendChild(head);
-
-    /* texto */
-    if(p.contenido){
-      const txt=document.createElement('p');
-      txt.className='post-text'; txt.textContent=p.contenido;
-      box.appendChild(txt);
-    }
-
-    /* ---------- IMAGENES ---------- */
-    if(p.imagenes.length){
-      if(p.imagenes.length<=4){                           // grid 1-4
-        const g=document.createElement('div');
-        g.className=`post-gallery cols-${p.imagenes.length}`;
-        p.imagenes.forEach(src=>{
-          const img=new Image(); img.src=`data:image/jpeg;base64,${src}`;
-          img.onclick=()=>openModalElem(img.cloneNode());
-          g.appendChild(img);
-        });
-        box.appendChild(g);
-      }else{                                              // >4: grid 2×2 + overlay
-        const g = document.createElement('div');
-    g.className = 'post-gallery cols-4';
-
-    const firstFour = p.imagenes.slice(0, 4);
-    firstFour.forEach((src, i) => {
-        const img = new Image();
-        img.src = `data:image/jpeg;base64,${src}`;
-        img.onclick = () => openCarouselModal(
-            [...p.imagenes.map(s=>({type:'img',src:s})),
-             ...p.videos.map(v=>({type:'vid',src:`../${v}`}))],
-            i                                          // empezar en la que clican
-        );
-        if (i === 3) {                                // último con overlay
-            const wrap = buildPlusOverlay(p.imagenes.length - 4);
-            wrap.appendChild(img);                    // imagen dentro del overlay
-            wrap.onclick = () => openCarouselModal(
-                [...p.imagenes.map(s=>({type:'img',src:s})),
-                 ...p.videos.map(v=>({type:'vid',src:`../${v}`}))],
-                3                                     // arranca en 4ª miniatura
-            );
-            g.appendChild(wrap);
-        } else {
-            g.appendChild(img);
-        }
-    });
-    box.appendChild(g);                 // añadimos el grid al post
-
-      }
-    }
-
-/* ---------- VIDEOS ---------- */
-if (p.videos.length) {
-
-/* ¿Hay imágenes? → NO pintes videos en el feed */
-const hayFotos = p.imagenes.length > 0;
-if (hayFotos) {
-    /* El video se verá en el modal junto a las imágenes */
-    // Nada que añadir al feed
-} else {
-
-    /* ----- sin imágenes, pinta videos ----- */
-    if (p.videos.length === 1) {          // un solo video ancho
-        const v = document.createElement('video');
-        v.src = `../${p.videos[0]}`;
-        v.controls = true;
-        v.className = 'post-video';
-        v.onclick = () => openCarouselModal(
-            [{ type: 'vid', src: v.src }],
-            0
-        );
-        box.appendChild(v);
-
-    } else if (p.videos.length <= 4) {    // 2-4 videos: grid
-        const vg = document.createElement('div');
-        vg.className = `post-video-grid cols-${p.videos.length}`;
-        p.videos.forEach((ruta, idx) => {
-            const v = document.createElement('video');
-            v.src = `../${ruta}`;
-            v.controls = true;
-            v.onclick = () => openCarouselModal(
-                p.videos.map(s => ({ type: 'vid', src: `../${s}` })),
-                idx
-            );
-            vg.appendChild(v);
-        });
-        box.appendChild(vg);
-
-    } else {                              // >4 videos: carrusel
-        box.appendChild(crearCarruselVideos(p.videos));
-    }
-}
+function buildPlusOverlay(count){
+  const wrap=document.createElement('div');wrap.style.position='relative';wrap.style.cursor='pointer';wrap.innerHTML=`<div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;border-radius:6px;">+${count}</div>`;return wrap;
 }
 
-
-    /* likes */
-    const lk=document.createElement('div');
-    lk.className='likes';
-    lk.innerHTML=`<i class="fas fa-heart"></i> ${p.likes} Me gusta`;
-    box.appendChild(lk);
-
-    cont.appendChild(box);
-  });
+function openCarouselModal(mediaArr,startIdx=0){
+  const overlay=document.createElement('div');overlay.className='modal-overlay';
+  const track=document.createElement('div');track.className='carousel-track';track.style.height='80vh';
+  mediaArr.forEach(item=>{if(item.type==='img'){const im=new Image();im.src=`data:image/jpeg;base64,${item.src}`;im.style.objectFit='contain';track.appendChild(im);}else{const v=document.createElement('video');v.src=item.src;v.controls=true;v.style.objectFit='contain';track.appendChild(v);}});
+  const modalCar=document.createElement('div');modalCar.className='carousel';modalCar.style.height='80vh';modalCar.appendChild(track);
+  let idx=startIdx;move(0);
+  function move(d){idx=(idx+d+mediaArr.length)%mediaArr.length;track.style.transform=`translateX(-${idx*100}%)`;}
+  const prev=document.createElement('button');prev.className='nav prev';prev.innerHTML='&#10094;';prev.onclick=()=>move(-1);
+  const next=document.createElement('button');next.className='nav next';next.innerHTML='&#10095;';next.onclick=()=>move(1);
+  modalCar.append(prev,next);
+  const close=document.createElement('span');close.className='modal-close';close.innerHTML='&times;';close.onclick=()=>overlay.remove();
+  overlay.append(modalCar,close);overlay.onclick=e=>{if(e.target===overlay) overlay.remove();};
+  document.body.appendChild(overlay);
 }
 
-
-
-
-
-
-/* ---------- CARRUSEL DE IMÁGENES (>4) ---------- */
-function crearCarrusel(imgArr){
-  const car   = document.createElement('div');
-  car.className = 'carousel';
-
-  const track = document.createElement('div');
-  track.className = 'carousel-track';
-
-  imgArr.forEach(src=>{
-    const im = new Image();
-    im.src = `data:image/jpeg;base64,${src}`;
-    im.onclick = ()=> openModal(im.cloneNode());     // << modal aquí
-    track.appendChild(im);
-  });
-  car.appendChild(track);
-
-  let idx = 0;
-  const prev = navBtn('prev', -1);
-  const next = navBtn('next',  1);
-  car.append(prev, next);
-
-  function navBtn(cls,dir){
-    const b = document.createElement('button');
-    b.className = `nav ${cls}`;
-    b.innerHTML  = cls==='prev' ? '&#10094;' : '&#10095;';
-    b.onclick    = ()=> mover(dir);
-    return b;
-  }
-  function mover(d){
-    idx = (idx + d + imgArr.length) % imgArr.length;
-    track.style.transform = `translateX(-${idx*100}%)`;
-  }
-  return car;
-}
-
-/* ---------- CARRUSEL DE VIDEOS (>4) ---------- */
 function crearCarruselVideos(videos){
-  const car   = document.createElement('div');
-  car.className = 'carousel';
-
-  const track = document.createElement('div');
-  track.className = 'carousel-track';
-
-  videos.forEach(ruta=>{
-    const v = document.createElement('video');
-    v.src = `../${ruta}`;
-    v.controls = true;
-    v.onclick  = ()=>{
-        const big = document.createElement('video');
-        big.src = v.src; big.controls = true; big.autoplay = true;
-        openModal(big);                               // << modal aquí
-    };
-    track.appendChild(v);
-  });
+  const car=document.createElement('div');car.className='carousel';
+  const track=document.createElement('div');track.className='carousel-track';
+  videos.forEach(ruta=>{const v=document.createElement('video');v.src=`../${ruta}`;v.controls=true;v.onclick=()=>{const big=document.createElement('video');big.src=v.src;big.controls=true;big.autoplay=true;openModalElem(big);};track.appendChild(v);});
   car.appendChild(track);
-
-  let idx = 0;
-  const prev = navBtn('prev',-1);
-  const next = navBtn('next', 1);
+  let idx=0;function move(d){idx=(idx+d+videos.length)%videos.length;track.style.transform=`translateX(-${idx*100}%)`;}
+  const prev=document.createElement('button');prev.className='nav prev';prev.innerHTML='&#10094;';prev.onclick=()=>move(-1);
+  const next=document.createElement('button');next.className='nav next';next.innerHTML='&#10095;';next.onclick=()=>move(1);
   car.append(prev,next);
-
-  function navBtn(cls,dir){
-    const b = document.createElement('button');
-    b.className = `nav ${cls}`;
-    b.innerHTML = cls==='prev' ? '&#10094;' : '&#10095;';
-    b.onclick   = ()=> mover(dir);
-    return b;
-  }
-  function mover(d){
-    idx = (idx + d + videos.length) % videos.length;
-    track.style.transform = `translateX(-${idx*100}%)`;
-  }
   return car;
 }
 
-//PUBLICACIONES 
-
-
-//END
-function cerrarSesion() {
-    localStorage.removeItem('usuario');
-    sessionStorage.removeItem('usuario');
-    location.href = "login.html";
-}
-
-function editarPerfil() {
-    // Redirigir a la página de edición de perfil
-    location.href = "edit_profile.html";
-}
-
+/***** =============== UTILIDADES VARIAS =============== *****/
+function cerrarSesion(){localStorage.removeItem('usuario');sessionStorage.removeItem('usuario');location.href='login.html';}
+function editarPerfil(){location.href='edit_profile.html';}
 </script>
 </body>
 </html>

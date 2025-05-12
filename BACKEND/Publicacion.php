@@ -25,9 +25,17 @@ class Publicaciones {
     /**
      * @param array $filters puede contener id_post, id_usuario, privacidad, restringir_comentarios
      */
+  //  public function obtener(array $filters = []) {
+   //     return $this->ejecutarSP($filters, 'S');
+  // }
+
     public function obtener(array $filters = []) {
-        return $this->ejecutarSP($filters, 'S');
-    }
+    // agrega viewer=id_usuario_logueado si existe
+    $filters['viewer'] = $filters['viewer'] ?? ($_SESSION['id_usuario'] ?? null);
+    return $this->ejecutarSP($filters, 'S');
+}
+
+
 
     public function ejecutarSP(array $d, string $transaCode) {
         $stmt = $this->pdo->prepare("CALL sp_crud_publicacion(
@@ -46,7 +54,8 @@ class Publicaciones {
                 :id_usuario_video,
                 :id_video,
                 :id_imagen,
-                :TransaCode
+                :TransaCode,
+                 :p_viewer
         )");
 
       
@@ -60,6 +69,7 @@ class Publicaciones {
         $stmt->bindValue(':fecha_post',              $d['fecha_post'] ?? null);
         $stmt->bindValue(':privacidad',              $d['privacidad'] ?? null);
         $stmt->bindValue(':deletedOn',               $d['deletedOn'] ?? null);
+        
 
         // ---- IMAGEN (BLOB) ----
         $stmt->bindValue(':imagen',                  $d['imagen'] ?? null, PDO::PARAM_LOB);
@@ -74,8 +84,11 @@ class Publicaciones {
         $stmt->bindValue(':id_video',                $d['id_video'] ?? null, PDO::PARAM_INT);
         $stmt->bindValue(':id_imagen',               $d['id_imagen'] ?? null, PDO::PARAM_INT);
 
+
         // ACCIÓN
         $stmt->bindValue(':TransaCode',              $transaCode);
+
+        $stmt->bindValue(':p_viewer', $d['viewer'] ?? null, PDO::PARAM_INT);
 
 
         $stmt->execute();
