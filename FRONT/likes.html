@@ -1,86 +1,254 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PostNet - Me Gusta</title>
-    
-    <!-- Agregar Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="likes.css">
-    
- 
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PostNet – Inicio</title>
+<link rel="stylesheet" href="main.css"><!-- si prefieres css externo -->
+<link rel="stylesheet" href="global.css"><!-- si prefieres css externo -->
+<!-- ⋯ ICONOS ⋯ -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
+
+
 </head>
+
 <body>
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <a href="main.html"><i class="fas fa-home"></i></a>
+  <a href="likes.html"><i class="fas fa-heart"></i></a>
+  <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i></a>
+  <a href="Notifications.html" class="nav-notif">
+  <i class="fas fa-bell"></i>
+  <span id="notif-badge" class="badge"></span>
+</a>
+  <a href="myProfile.html"><i class="fas fa-user"></i></a>
+</div>
 
-    <!-- Barra Lateral -->
-    <div class="sidebar">
-        <a href="main.html"><i class="fas fa-home"></i><br></a>
-        <a href="likes.html"><i class="fas fa-heart"></i><br></a>
-        <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a> <!-- Nuevo botón para agregar publicación -->
-        <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
-        <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
+<!-- ── CONTENIDO ── -->
+<div class="main-container">
+  <div class="header">
+    <h1>PostNet</h1>
+    <input class="search-bar" placeholder="Buscar">
+    <button class="search-btn">Buscar</button>
+
+    <div class="usuario-header" id="usuarioHeader">
+      <span id="nombreUsuario">Usuario</span>
+      <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
+  </div>
 
-    <!-- Contenido Principal -->
-    <div class="main-container">
-        
-        <!-- Encabezado con Búsqueda -->
-        <div class="header">
-            <h1>PostNet</h1>
-            <input type="text" class="search-bar" placeholder="Buscar">
-            <button class="search-btn">Buscar</button>
+  <div id="feed"></div>
+</div>
 
-               <!-- Usuario y Cerrar Sesión -->
-            <div class="usuario-header" id="usuarioHeader">
-                <span id="nombreUsuario">Usuario</span>
-                <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
-            </div>
-        </div>
-
-        <!-- Publicaciones que me gustaron -->
-        <div class="post-container">
-            <div class="post-header">
-                <div class="user-avatar">A</div>
-                <span><strong>Usuario A</strong></span>
-            </div>
-            <p class="post-text">Esta es una publicación que te gustó.</p>
-            <div class="post-image"></div>
-            <div class="likes"><i class="fas fa-heart"></i> 20 Me gusta</div>
-        </div>
-
-        <div class="post-container">
-            <div class="post-header">
-                <div class="user-avatar">B</div>
-                <span><strong>Usuario B</strong></span>
-            </div>
-            <p class="post-text">Otra publicación que marcaste con "Me gusta".</p>
-            <div class="post-image"></div>
-            <div class="likes"><i class="fas fa-heart"></i> 45 Me gusta</div>
-        </div>
-
-    </div>
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-    let usuario = JSON.parse(localStorage.getItem('usuario'));
+document.addEventListener('DOMContentLoaded',()=>{
 
-    if (!usuario) {
-        // Si no existe en localStorage, lo busco en sessionStorage
-        usuario = JSON.parse(sessionStorage.getItem('usuario'));
+/* ============== sesión ============== */
+const user = JSON.parse(localStorage.getItem('usuario')) ||
+             JSON.parse(sessionStorage.getItem('usuario'));
+if(!user) return location.href='login.html';
+document.getElementById('nombreUsuario').textContent = user.nombre;
+
+/* ============== paginación infinita ============== */
+let offset=0,busy=false,limit=20;
+cargarLikes();
+window.addEventListener('scroll',()=>{ if(innerHeight+scrollY >= document.body.offsetHeight-600) cargarLikes(); });
+
+ async function cargarLikes(){
+    if(busy) return; busy=true;
+    try {
+      const res = await fetch('../BACKEND/Controlador/Liked_select.php', {
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:new URLSearchParams({ viewer:user.id_usuario, limit, offset })
+      });
+      const js = await res.json();
+      if(js.status==='success'){
+        
+        renderFeed(js.data);    // reutiliza tu función renderFeed
+        offset += js.data.length;
+        if(js.data.length < limit) window.removeEventListener('scroll', cargarLikes);
+        
+      }
+    } catch(e){ console.error(e) }
+    busy=false;
+  }
+
+/* ============== helpers (modal, carruseles…) ============== */
+function openModalElem(el){
+  const clean = el.cloneNode(true);
+  clean.style.width  = '';
+  clean.style.height = '';
+  clean.style.objectFit = 'contain';
+
+  const ov = document.createElement('div'); ov.className = 'modal-overlay';
+  const ct = document.createElement('div'); ct.className = 'modal-content'; ct.appendChild(clean);
+  const x  = document.createElement('span');x.className='modal-close';x.innerHTML='&times;';x.onclick=()=>ov.remove();
+  ov.append(ct,x); ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+
+function plusOverlay(n){
+  const w=document.createElement('div');w.style.position='relative';
+  const ov=document.createElement('div');ov.className='plus-overlay';ov.textContent=`+${n}`;
+  w.appendChild(ov);return w;
+}
+
+function openCarousel(arr, idx = 0){
+  /* overlay y track */
+  const ov    = document.createElement('div');  ov.className = 'modal-overlay';
+  const track = document.createElement('div');  track.className = 'carousel-track';
+
+  /* media */
+  arr.forEach(obj=>{
+      if(obj.type==='img'){
+          const im = new Image();
+          im.src   = `data:image/jpeg;base64,${obj.src}`;
+          track.appendChild(im);
+      }else{
+          const v  = document.createElement('video');
+          v.src    = obj.src;
+          v.controls = true;
+          track.appendChild(v);
+      }
+  });
+
+  /* carrusel de 80 vh */
+  const car = document.createElement('div');
+  car.className   = 'carousel';
+  car.style.height = '80vh';        // 👈  igual que en perfil
+  car.appendChild(track);
+
+  /* navegación */
+  const move = d=>{
+      idx = (idx + d + arr.length) % arr.length;
+      track.style.transform = `translateX(-${idx*100}%)`;
+  };
+  ['prev','next'].forEach(cls=>{
+      const btn = document.createElement('button');
+      btn.className = `nav ${cls}`;
+      btn.innerHTML = cls==='prev' ? '&#10094;' : '&#10095;';
+      btn.onclick   = ()=>move(cls==='prev' ? -1 : 1);
+      car.appendChild(btn);
+  });
+
+  /* close */
+  const x = document.createElement('span');
+  x.className='modal-close';
+  x.innerHTML='&times;';
+  x.onclick = ()=>ov.remove();
+
+  /* montar todo */
+  ov.append(car, x);
+  ov.onclick = e=>{ if(e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+
+  move(0);            // posiciona primera imagen
+}
+
+/* ============== render ========= */
+function renderFeed(rows) {
+  const feed=document.getElementById('feed');
+  rows.forEach(p=>{
+     const nombre = `${p.nombre} ${p.apellido||''}`.trim();
+
+    // el HTML del avatar: preferimos img si existe avatar_b64
+    const avatarHTML = p.avatar_b64
+      ? `<img src="data:image/jpeg;base64,${p.avatar_b64}" alt="Avatar" />`
+      : (nombre ? nombre[0] : 'U');
+
+    const card = document.createElement('div');
+    card.className = 'post-container';
+    card.innerHTML = `
+      <div class="post-header">
+        <div class="user-avatar">
+          ${avatarHTML}
+        </div>
+        <span><strong>${nombre||'Usuario'}</strong></span>
+      </div>
+      ${p.contenido ? `<p class="post-text">${p.contenido}</p>` : ''}
+      <!-- aquí va el resto de tu código (galería, likes, etc.) -->
+    `;
+
+    /* media */
+    const imgs=p.imagenes_b64? p.imagenes_b64.split(',').filter(Boolean):[];
+    const vids=p.videos_ruta ? p.videos_ruta.split(',').filter(Boolean):[];
+
+    if(imgs.length){
+      if(imgs.length<=4){
+        const g=document.createElement('div');g.className=`post-gallery cols-${imgs.length}`;
+        imgs.forEach(b64=>{const im=new Image();im.src=`data:image/jpeg;base64,${b64}`;im.onclick=()=>openModalElem(im.cloneNode());g.appendChild(im);});
+        card.appendChild(g);
+      }else{
+        const g=document.createElement('div');g.className='post-gallery cols-4';
+        imgs.slice(0,4).forEach((b64,i)=>{const im=new Image();im.src=`data:image/jpeg;base64,${b64}`;im.onclick=()=>openCarousel([...imgs.map(s=>({type:'img',src:s})),...vids.map(v=>({type:'vid',src:`../${v}`}))],i);if(i===3){const wrap=plusOverlay(imgs.length-4);wrap.appendChild(im);g.appendChild(wrap);}else g.appendChild(im);});
+        card.appendChild(g);
+      }
+    }else if(vids.length){
+      if(vids.length===1){
+        const v=document.createElement('video');v.src=`../${vids[0]}`;v.controls=true;v.className='post-video';v.onclick=()=>openModalElem(v.cloneNode(true));card.appendChild(v);
+      }else{
+        const grid=document.createElement('div');grid.className=`post-video-grid cols-${Math.min(vids.length,4)}`;
+        vids.slice(0,4).forEach((r,i)=>{const v=document.createElement('video');v.src=`../${r}`;v.controls=true;v.onclick=()=>openCarousel(vids.map(s=>({type:'vid',src:`../${s}`})),i);grid.appendChild(v);});
+        card.appendChild(grid);
+      }
     }
 
-    if (usuario) {
-        document.getElementById("nombreUsuario").textContent = usuario.nombre;
-    } else {
-        location.href = "login.html"; // Redirige si no está logueado en ninguna de las dos
+    /* likes */
+    /* likes */
+const like = document.createElement('div');
+like.className = 'likes';
+like.innerHTML = `<i class="fas fa-heart ${ Number(p.yo_like) ? 'liked' : '' }"></i><span class="like-count">${p.total_likes}</span> Me gusta`;
+    like.onclick=()=>darLike(p.id_post,like);
+    card.appendChild(like);
+ console.log(p.yo_like);
+    feed.appendChild(card);
+  });
+}
+
+/* ============== like ============== */
+async function darLike(idPost, node){
+  const heart      = node.querySelector('i');
+  const countLabel = node.querySelector('.like-count');
+
+  try{
+    const res = await fetch('../BACKEND/Controlador/Like_insert.php', {
+      method : 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body   : new URLSearchParams({ id_post:idPost, id_usuario:user.id_usuario })
+    });
+    const js = await res.json();
+
+    if (js.status === 'success') {
+        const delta = js.delta;          // +1 o -1
+        if (delta === 1)  heart.classList.add('liked');
+        if (delta === -1) heart.classList.remove('liked');
+
+        countLabel.textContent = Math.max(0, +countLabel.textContent + delta);
+
+              // ————————— dinamismo en likes.html —————————
+      // si estamos en la vista de “Me gusta” (likes.html)
+      // y el usuario acaba de quitar el like (delta === -1),
+      // quitamos la .post-container de la página
+      if (delta === -1 && window.location.pathname.endsWith('/likes.html')) {
+        const postCard = node.closest('.post-container');
+        postCard && postCard.remove();
+      }
+      // ————————————————————————————————————————
     }
+  }catch(err){
+    console.error(err);
+  }
+}
+/* ============== cerrar sesión ============== */
+
 });
 
-function cerrarSesion() {
-    localStorage.removeItem('usuario');
-    sessionStorage.removeItem('usuario');
-    location.href = "login.html";
-}
+/* logout */
+function cerrarSesion(){localStorage.removeItem('usuario');sessionStorage.removeItem('usuario');location.href='login.html';}
 </script>
+<script src="global.js"></script>
 </body>
 </html>

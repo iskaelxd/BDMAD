@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PostNet - Mi Perfil</title>
     <link rel="stylesheet" href="myProfile.css">
+    <link rel="stylesheet" href="global.css"><!-- si prefieres css externo -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -27,7 +28,10 @@
         <a href="main.html"><i class="fas fa-home"></i><br></a>
         <a href="likes.html"><i class="fas fa-heart"></i><br></a>
         <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a>
-        <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
+        <a href="Notifications.html" class="nav-notif">
+  <i class="fas fa-bell"></i>
+  <span id="notif-badge" class="badge"></span>
+</a>
         <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
     </div>
 
@@ -225,5 +229,6 @@ function crearCarruselVideos(videos){
 function cerrarSesion(){localStorage.removeItem('usuario');sessionStorage.removeItem('usuario');location.href='login.html';}
 function editarPerfil(){location.href='edit_profile.html';}
 </script>
+<script src="global.js"></script>
 </body>
 </html>

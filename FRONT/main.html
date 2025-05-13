@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>PostNet – Inicio</title>
 <link rel="stylesheet" href="main.css"><!-- si prefieres css externo -->
+<link rel="stylesheet" href="global.css"><!-- si prefieres css externo -->
 <!-- ⋯ ICONOS ⋯ -->
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
@@ -18,7 +19,10 @@
   <a href="main.html"><i class="fas fa-home"></i></a>
   <a href="likes.html"><i class="fas fa-heart"></i></a>
   <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i></a>
-  <a href="Notifications.html"><i class="fas fa-bell"></i></a>
+  <a href="Notifications.html" class="nav-notif">
+  <i class="fas fa-bell"></i>
+  <span id="notif-badge" class="badge"></span>
+</a>
   <a href="myProfile.html"><i class="fas fa-user"></i></a>
 </div>
 
@@ -232,5 +236,6 @@ async function darLike(idPost, node){
 /* logout */
 function cerrarSesion(){localStorage.removeItem('usuario');sessionStorage.removeItem('usuario');location.href='login.html';}
 </script>
+<script src="global.js"></script>
 </body>
 </html>

@@ -118,56 +118,63 @@
         }
 
         /* Notificaciones */
-        .notifications-container {
-            background-color: #1e1e1e;
-            padding: 15px;
-            border-radius: 10px;
-            width: 100%;
-            border: 1px solid #333;
-        }
+   /* Notificación por defecto */
+.notification {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  margin-bottom: 8px;
+  background-color: #1e1e1e;
+  border-radius: 5px;
+  cursor: pointer;              /* para que sea obvio que es clicable */
+  transition: background .2s;
+}
 
-        .notification {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid #333;
-        }
+/* Estado “no leída” */
+.notification.unread {
+  background-color: #292929;
+  border-left: 4px solid #6200ea;  /* acento violeta para resaltar */
+}
 
-        .notification:last-child {
-            border-bottom: none;
-        }
+/* Avatar */
+.notification-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%; overflow: hidden;
+  flex-shrink: 0;
+  background-color: #ff4d4d;
+  display: flex; align-items: center; justify-content: center;
+}
+.notification-avatar img {
+  width: 100%; height: 100%; object-fit: cover;
+}
 
-        .notification-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #ff4d4d;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            margin-right: 10px;
-        }
+/* Contenido */
+.notification-content {
+  flex-grow: 1;
+  margin: 0 10px;
+}
+.notification-content p {
+  color: #bbbbbb;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.notification-content small {
+  color: #777;
+  font-size: 12px;
+}
 
-        .notification-content {
-            flex-grow: 1;
-        }
+/* Icono */
+.notification-icon {
+  font-size: 18px;
+  color: #6200ea;
+  flex-shrink: 0;
+}
 
-        .notification-content p {
-            color: #bbbbbb;
-            font-size: 14px;
-        }
+/* resalta texto de no leídas */
+.notification.unread p {
+  color: #ffffff;
+  font-weight: 600;
+}
 
-        .notification-icon {
-            font-size: 20px;
-            color: #6200ea;
-        }
-
-        .notification.unread {
-            background-color: #292929;
-            border-radius: 5px;
-        }
 

@@ -1,100 +1,152 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PostNet - Notificaciones</title>
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="Notification.css">
-    
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PostNet – Notificaciones</title>
+    <link rel="stylesheet" href="global.css">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="Notification.css">
+
+  <!-- cargar global.js primero para que exista updateNotifBadge() -->
+  <script src="global.js"></script>
 </head>
 <body>
+  <div class="sidebar">
+    <a href="main.html"><i class="fas fa-home"></i></a>
+    <a href="likes.html"><i class="fas fa-heart"></i></a>
+    <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i></a>
+    <a href="Notifications.html" class="nav-notif">
+      <i class="fas fa-bell"></i>
+      <span id="notif-badge" class="badge"></span>
+    </a>
+    <a href="myProfile.html"><i class="fas fa-user"></i></a>
+  </div>
 
-    <!-- Barra Lateral -->
-    <div class="sidebar">
-        <a href="main.html"><i class="fas fa-home"></i><br></a>
-        <a href="likes.html"><i class="fas fa-heart"></i><br></a>
-        <a href="nuevaPublicacion.html"><i class="fas fa-plus"></i><br></a> <!-- Nuevo botón para agregar publicación -->
-        <a href="Notifications.html"><i class="fas fa-bell"></i><br></a>
-        <a href="myProfile.html"><i class="fas fa-user"></i><br></a>
+  <div class="main-container">
+    <div class="header">
+      <h1>PostNet</h1>
+      <input type="text" class="search-bar" placeholder="Buscar">
+      <button class="search-btn">Buscar</button>
+      <div class="usuario-header" id="usuarioHeader">
+        <span id="nombreUsuario">Usuario</span>
+        <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
+      </div>
     </div>
 
-    <!-- Contenido Principal -->
-    <div class="main-container">
-        
-        <!-- Encabezado con Búsqueda -->
-        <div class="header">
-            <h1>PostNet</h1>
-            <input type="text" class="search-bar" placeholder="Buscar">
-            <button class="search-btn">Buscar</button>
+    <div class="notifications-container" id="notifs"></div>
+  </div>
 
-               <!-- Usuario y Cerrar Sesión -->
-               <div class="usuario-header" id="usuarioHeader">
-                <span id="nombreUsuario">Usuario</span>
-                <button class="cerrar-btn" onclick="cerrarSesion()">Cerrar sesión</button>
-                </div>
-        </div>
-
-        <!-- Sección de Notificaciones -->
-        <div class="notifications-container">
-            
-            <div class="notification unread">
-                <div class="notification-avatar">A</div>
-                <div class="notification-content">
-                    <p><strong>Usuario A</strong> le dio Me gusta a tu publicación.</p>
-                </div>
-                <i class="fas fa-heart notification-icon"></i>
-            </div>
-
-            <div class="notification">
-                <div class="notification-avatar">B</div>
-                <div class="notification-content">
-                    <p><strong>Usuario B</strong> comentó en tu publicación: "¡Me encanta esta publicación! 🔥"</p>
-                </div>
-                <i class="fas fa-comment notification-icon"></i>
-            </div>
-
-            <div class="notification unread">
-                <div class="notification-avatar">C</div>
-                <div class="notification-content">
-                    <p><strong>Usuario C</strong> comenzó a seguirte.</p>
-                </div>
-                <i class="fas fa-user-plus notification-icon"></i>
-            </div>
-
-            <div class="notification">
-                <div class="notification-avatar">D</div>
-                <div class="notification-content">
-                    <p><strong>Usuario D</strong> compartió tu publicación.</p>
-                </div>
-                <i class="fas fa-retweet notification-icon"></i>
-            </div>
-
-        </div>
-
-    </div>
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-    let usuario = JSON.parse(localStorage.getItem('usuario'));
+document.addEventListener('DOMContentLoaded', () => {
 
-    if (!usuario) {
-        // Si no existe en localStorage, lo busco en sessionStorage
-        usuario = JSON.parse(sessionStorage.getItem('usuario'));
-    }
+  /* ---------- datos de sesión ---------- */
+  const user = JSON.parse(localStorage.getItem('usuario'))
+             || JSON.parse(sessionStorage.getItem('usuario'));
+  if (!user) return location.href = 'login.html';
+  document.getElementById('nombreUsuario').textContent = user.nombre;
 
-    if (usuario) {
-        document.getElementById("nombreUsuario").textContent = usuario.nombre;
-    } else {
-        location.href = "login.html"; // Redirige si no está logueado en ninguna de las dos
-    }
-    });
+  const cont  = document.getElementById('notifs');
+  const badge = document.getElementById('notif-badge');
 
-    function cerrarSesion() {
-    localStorage.removeItem('usuario');
-    sessionStorage.removeItem('usuario');
-    location.href = "login.html";
+  /* ---------- 1. refresca campana ---------- */
+  async function updateNotifBadge() {
+    try {
+      const res = await fetch('../BACKEND/Controlador/Notification_count.php', {
+        method : 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body   : new URLSearchParams({ viewer: user.id_usuario })
+      });
+      const js = await res.json();
+      if (js.status === 'success' && js.unread > 0) {
+        badge.textContent   = js.unread;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    } catch (err) { console.error(err); }
+  }
+
+  /* ---------- 2. carga / pinta notificaciones ---------- */
+  async function loadNotifs() {
+    try {
+      const res = await fetch('../BACKEND/Controlador/Notification_select.php', {
+        method : 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body   : new URLSearchParams({ viewer: user.id_usuario, limit: 50, offset: 0 })
+      });
+      const js = await res.json();
+      if (js.status !== 'success') return;
+
+      cont.innerHTML = '';                        // limpia contenedor
+
+      js.data.forEach(n => {
+        /* icono según tipo */
+        const ico = n.tipo === 'like'        ? 'fa-heart'   :
+                    n.tipo === 'comentario'  ? 'fa-comment' :
+                                                'fa-user-plus';
+
+        /* avatar */
+        const avatarHTML = n.avatar_b64
+              ? `<img src="data:image/jpeg;base64,${n.avatar_b64}">`
+              : n.nombre[0];
+
+        /* ❶ COMPARA COMO NÚMERO */
+        const unreadCls = Number(n.visto) === 0 ? ' unread' : '';
+
+        const textos = {
+          like:        'le dio Me gusta a tu publicación.',
+          comentario:  'comentó en tu publicación.',
+          seguimiento: 'comenzó a seguirte.'
+        };
+
+        cont.insertAdjacentHTML('beforeend', `
+          <div class="notification${unreadCls}" data-id="${n.id_notificacion}">
+            <div class="notification-avatar">${avatarHTML}</div>
+            <div class="notification-content">
+              <p><strong>${n.nombre} ${n.apellido}</strong> ${textos[n.tipo] || ''}</p>
+              <small>${new Date(n.fecha).toLocaleString()}</small>
+            </div>
+            <i class="fas ${ico} notification-icon"></i>
+          </div>`);
+      });
+
+    } catch (err) { console.error(err); }
+  }
+
+  /* ---------- 3. marcar como leída al hacer clic ---------- */
+  cont.addEventListener('click', async e => {
+    const card = e.target.closest('.notification.unread');
+    if (!card) return;                       // no era "unread"
+
+    try {
+      const res = await fetch('../BACKEND/Controlador/Notification_mark_read.php', {
+        method : 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body   : new URLSearchParams({ id_notificacion: card.dataset.id })
+      });
+      const js = await res.json();
+      if (js.status === 'success') {
+        card.classList.remove('unread');     // se apaga visualmente
+        updateNotifBadge();                  // baja el contador
+      }
+    } catch (err) { console.error(err); }
+  });
+
+  /* ---------- 4. inicia ---------- */
+  updateNotifBadge();
+  loadNotifs();
+});
+
+/* ---------- logout ---------- */
+function cerrarSesion() {
+  localStorage.removeItem('usuario');
+  sessionStorage.removeItem('usuario');
+  location.href = 'login.html';
 }
 </script>
+
+
 </body>
 </html>
