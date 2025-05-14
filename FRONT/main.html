@@ -56,6 +56,7 @@ let offset=0,busy=false,limit=20;
 cargarFeed();
 window.addEventListener('scroll',()=>{ if(innerHeight+scrollY >= document.body.offsetHeight-600) cargarFeed(); });
 
+
 async function cargarFeed(){
   if(busy) return; busy=true;
   try{
@@ -72,6 +73,48 @@ async function cargarFeed(){
   }catch(e){console.error(e);}
   busy=false;
 }
+
+/* ========== comentarios ========== */
+async function obtenerComentarios(idPost){
+  const res = await fetch('../BACKEND/Controlador/Comentario_proc.php',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({accion:'S', id_post:idPost})
+  });
+  const js = await res.json();
+  return js.data || [];
+}
+
+async function publicarComentario(idPost, texto){
+  const res = await fetch('../BACKEND/Controlador/Comentario_proc.php',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({
+      accion:'I',
+      id_post:idPost,
+      id_usuario:user.id_usuario,
+      contenido:texto
+    })
+  });
+  const js = await res.json();
+  if(js.status === 'forbidden'){
+      alert('El autor ha desactivado los comentarios en esta publicación');
+      return null;
+  }
+  return js.data ? js.data[0] : null;
+}
+
+function nodoComentario(c){
+  const nombre = `${c.nombre||''} ${c.apellido||''}`.trim();
+  return `
+    <div class="single-comment">
+        <span class="comment-author"><strong>${nombre}</strong></span><br>
+        <span class="comment-text">${c.contenido}</span>
+    </div>`;
+}
+
+
+
 
 /* ============== helpers (modal, carruseles…) ============== */
 function openModalElem(el){
@@ -145,6 +188,8 @@ function openCarousel(arr, idx = 0){
   move(0);            // posiciona primera imagen
 }
 
+
+
 /* ============== render ========= */
 function renderFeed(rows) {
   const feed=document.getElementById('feed');
@@ -201,6 +246,62 @@ like.innerHTML = `<i class="fas fa-heart ${ Number(p.yo_like) ? 'liked' : '' }">
     like.onclick=()=>darLike(p.id_post,like);
     card.appendChild(like);
  console.log(p.yo_like);
+
+
+/* === COMENTARIOS === */
+const comentariosWrap = document.createElement('div');
+comentariosWrap.className = 'comments-wrap';
+
+const puede = Number(p.puede_comentar);   // 1 = sí, 0 = no
+
+comentariosWrap.innerHTML = `
+  <button class="toggle-comments">Comentarios</button>
+  <div class="comments-section" style="display:none">
+      <div class="comment-list"></div>
+      ${ puede ? `
+      <form class="comment-form">
+        <input type="text" class="comment-input" placeholder="Escribe un comentario…">
+        <button type="submit">Enviar</button>
+      </form>` :
+      `<div class="blocked-msg">Comentarios desactivados</div>` }
+  </div>`;
+card.appendChild(comentariosWrap);
+
+/* lógica */
+const btnToggle = comentariosWrap.querySelector('.toggle-comments');
+const section   = comentariosWrap.querySelector('.comments-section');
+const lista     = comentariosWrap.querySelector('.comment-list');
+
+btnToggle.onclick = async ()=>{
+  section.style.display =
+      section.style.display === 'none' ? 'block' : 'none';
+
+  if(section.style.display==='block' && !section.dataset.loaded){
+      const arr = await obtenerComentarios(p.id_post);
+      arr.forEach(c=>lista.insertAdjacentHTML('beforeend', nodoComentario(c)));
+      section.dataset.loaded='1';
+  }
+};
+
+/* sólo si se puede comentar enganchamos el submit */
+if(puede){
+  const form  = comentariosWrap.querySelector('.comment-form');
+  const input = comentariosWrap.querySelector('.comment-input');
+
+  form.addEventListener('submit', async e=>{
+      e.preventDefault();
+      const txt = input.value.trim();
+      if(!txt) return;
+
+      const nuevo = await publicarComentario(p.id_post, txt);
+      if(nuevo){
+          lista.insertAdjacentHTML('beforeend', nodoComentario(nuevo));
+          input.value='';
+      }
+  });
+}
+
+
     feed.appendChild(card);
   });
 }

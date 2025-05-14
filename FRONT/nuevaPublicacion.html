@@ -69,7 +69,7 @@
       <select id="restriccion" class="custom-select">
         <option value="publico">Público</option>
         <option value="Nadie">Nadie</option>
-        <option value="Solo amigos">Solo amigos</option>
+        <option value="solo amigos">Solo amigos</option>
       </select>
 
       <h3 style="margin:20px 0 8px;">Vista previa (<span id="peso">0</span>/64 MB)</h3>
@@ -205,7 +205,8 @@ async function enviar(){
 
   newImgs.forEach(f=>fd.append('imagenes[]',f)); newVids.forEach(f=>fd.append('videos[]',f));
   const url=editMode?'../BACKEND/Controlador/Publicacion_actualizar.php':'../BACKEND/Controlador/Publicacion_insertar.php';
-  try{const r=await fetch(url,{method:'POST',body:fd});const js=await r.json();if(js.status==='success'){toast(editMode?'Publicación actualizada ✅':'¡Publicación creada! ✅');location.href='myProfile.html';}else toast(js.message);}catch(e){toast('Fallo de red');}
+  console.log(document.getElementById('restriccion').value);
+  try{const r=await fetch(url,{method:'POST',body:fd});const js=await r.json();if(js.status==='success'){toast(editMode?'Publicación actualizada ✅':'¡Publicación creada! ✅');location.href="nuevaPublicacion.html"}else toast(js.message);}catch(e){toast('Fallo de red');}
 }
 
 document.querySelector('.publicar-btn').onclick=enviar;

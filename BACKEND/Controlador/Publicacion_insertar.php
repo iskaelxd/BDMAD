@@ -6,6 +6,7 @@ require_once '../BDConexion/BD.php';
 require_once '../Modelo/Publicacion.php';
 require_once '../Publicacion.php';   // DAO que llama al SP
 
+
 try {
     /* ---------- request básica ---------- */
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
